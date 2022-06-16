@@ -5,8 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "assemblyscript": "^0.20.11",
-    "path": "^0.12.7"
+    "assemblyscript": "^0.20.11"
   },
   "devDependencies": {
     "typescript": "^4.7.3"
