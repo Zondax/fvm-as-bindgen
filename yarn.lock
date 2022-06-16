@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@types/node@^18.0.0":
+  version "18.0.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.0.0.tgz#67c7b724e1bcdd7a8821ce0d5ee184d3b4dd525a"
+  integrity sha512-cHlGmko4gWLVI27cGJntjs/Sj8th9aYwplmZFwmmgYQQvL5NUsgVJG7OddLvNfLqYS31KFN0s3qlaD9qCaxACA==
+
 assemblyscript@^0.20.11:
   version "0.20.11"
   resolved "https://registry.yarnpkg.com/assemblyscript/-/assemblyscript-0.20.11.tgz#cf2b0c70cc8657757673cf06cc372530ed17f73c"
