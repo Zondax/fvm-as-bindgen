@@ -25,8 +25,4 @@ jobs:
       - name: Install dependencies
         run: yarn install
       - name: Build package
-        run: |
-          ls -la
-          yarn build
-          ls -la
-          yarn build:fix_transform
+        run: yarn build
