@@ -20,6 +20,6 @@
   "license": "MIT",
   "type": "module",
   "files": [
-    "./dist/*"
+    "dist"
   ]
 }
