@@ -1,7 +1,8 @@
 import { Transform } from "assemblyscript/asc"
 import { Parser, Source } from "assemblyscript"
 
-import { filecoinFiles, posixRelativePath } from "./utils.js";
+import {filecoinFiles, isEntry, posixRelativePath} from "./utils.js";
+import {Builder} from "./builder.js";
 
 export class MyTransform extends Transform {
     parser: Parser | undefined;
@@ -20,6 +21,8 @@ export class MyTransform extends Transform {
 
         let newParser = new Parser(parser.diagnostics);
 
+        let filecoinDecoratorFound = false
+
         // Filter for filecoin files
         let files = filecoinFiles(parser.sources);
 
@@ -28,7 +31,7 @@ export class MyTransform extends Transform {
             if (source.internalPath.includes("index-stub")) return;
             let writeOut = /\/\/.*@filecoinfile .*out/.test(source.text);
 
-            /*// Remove from logs in parser
+            // Remove from logs in parser
             parser.donelog.delete(source.internalPath);
             parser.seenlog.delete(source.internalPath);
 
@@ -41,7 +44,10 @@ export class MyTransform extends Transform {
             );
 
             // Build new Source
-            let sourceText = JSONBindingsBuilder.build(source);
+            let [sourceText, isFilecoinFound] = Builder.build(source);
+
+            if(isFilecoinFound) filecoinDecoratorFound = true
+
             if (writeOut) {
                 writeFile(
                     posixRelativePath("out", source.normalizedPath),
@@ -59,42 +65,9 @@ export class MyTransform extends Transform {
             this.program.sources.push(newSource);
             parser.donelog.add(source.internalPath);
             parser.seenlog.add(source.internalPath);
-            parser.sources.push(newSource);*/
+            parser.sources.push(newSource);
         });
 
+        if(!filecoinDecoratorFound) throw new Error(`filecoin decorator is missing. Please add "// @filecoinfile" once at the very beginning of the index file.`)
     }
-}
-
-
-
-function createInvoke(){
-    const baseFunc = `export function invoke(_: u32): u32 {
-
-      // Read invoked method number
-      const methodNum = methodNumber()
-    
-      switch (u32(methodNum)) {
-        // Method number 1 is fixe for create actor command
-        case 1:
-          // Call constructor func.
-          constructor()
-          break
-    
-        // Any other method is defined by the user
-        case 2:
-          // Execute whatever the smart contract wants.
-          const msg = say_hello()
-    
-          // If we want to return something as execution result,
-          // we need to create a block with those values, and return
-          // the output of that function
-          return create(DAG_CBOR, msg)
-    
-        // If the method number is not implemented, an error should be retrieved
-        default:
-          usrUnhandledMsg()
-      }
-    
-      return NO_DATA_BLOCK_ID
-    }`
 }

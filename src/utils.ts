@@ -1,5 +1,5 @@
 import path from "path"
-import {NodeKind, SourceKind, CommonFlags, DeclarationStatement, Source, Node} from "assemblyscript"
+import {NodeKind, SourceKind, CommonFlags, DeclarationStatement, Source, Node, ASTBuilder} from "assemblyscript"
 
 
 
@@ -42,7 +42,54 @@ function isEncodable(mem: DeclarationStatement) {
     return isField(mem) && !isStatic(mem);
 }
 
+export function toString(node: Node): string {
+    return ASTBuilder.build(node);
+}
+
 export function posixRelativePath(from: string, to: string): string {
     const relativePath = path.relative(from, to);
     return relativePath.split(path.sep).join(path.posix.sep);
+}
+
+export function importsInvoke(): string{
+    return `
+        import {NO_DATA_BLOCK_ID, DAG_CBOR} from "@zondax/fvm-as-sdk/assembly/env";
+        import {methodNumber, usrUnhandledMsg, create} from "@zondax/fvm-as-sdk/assembly/wrappers";
+        import {isConstructorCaller} from "@zondax/fvm-as-sdk/assembly/helpers";
+    `
+}
+
+export function createInvoke(): string{
+    const baseFunc = `
+    export function invoke(_: u32): u32 {
+
+      // Read invoked method number
+      const methodNum = u32(methodNumber())
+    
+      switch (methodNum) {
+        // Method number 1 is fixe for create actor command
+        case 1:
+          // The caller of this method should be always the same.
+          // Nobody else should call the constructor
+          if( !isConstructorCaller() ) return NO_DATA_BLOCK_ID
+          
+          // Call constructor func.
+          init()
+          
+          // Return no data
+          return NO_DATA_BLOCK_ID
+         
+        // If the method number is not implemented, an error should be retrieved
+        default:
+          const result = mappingMethods(methodNum)
+          if(result >= 0){
+            return u32(result)
+          } else {
+            usrUnhandledMsg()
+            return NO_DATA_BLOCK_ID
+          }
+      }
+    }`
+
+    return baseFunc
 }

@@ -18,5 +18,8 @@
   },
   "author": "Zondax AG",
   "license": "MIT",
-  "type": "module"
+  "type": "module",
+  "files": [
+    "./dist/*"
+  ]
 }
