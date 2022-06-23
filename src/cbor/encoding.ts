@@ -7,7 +7,8 @@ export function encode(fields: string[]){
     result.push(`encoder.addObject(${fields.length})`)
 
     fields.forEach( field => {
-        const [name, type] = field.split(":")
+        const [name, typeAndDefault] = field.split(":")
+        const [type, defaultVal] = typeAndDefault.split("=")
         result.push(`encoder.addKey("${name}")`)
         encodeTypes(result, type.trim(), name.trim(), "","")
     })
@@ -72,7 +73,8 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
             if( type.startsWith("Array") ){
                 const arrayType = type.split("<")[1].split(">")[0]
 
-                result.push(`encoder.addArray("${fieldName}", this.${fieldName}.length)`)
+                result.push(`encoder.addKey("${fieldName}")`)
+                result.push(`encoder.addArray(this.${fieldName}.length)`)
                 let newIndex = getNewIndexLetter(result, indexName)
                 result.push(`for(let ${newIndex} = 0; ${newIndex} < this.${fieldName}.length; ${newIndex}++){`)
                 encodeTypes(result, arrayType, fieldName, "array", newIndex)
@@ -81,14 +83,18 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
 
             if( type.startsWith("Map") ){
                 const [keyType, valueType] = type.split("<")[1].split(">")[0].split(",")
+                console.log(keyType)
+                console.log(valueType)
 
                 let newIndex = getNewIndexLetter(result, indexName)
                 result.push(`let keys_${newIndex} = this.${fieldName}.keys()`)
 
-                result.push(`encoder.addObject("${fieldName}", keys_${newIndex}.length)`)
+                result.push(`encoder.addKey("${fieldName}")`)
+                result.push(`encoder.addObject(keys_${newIndex}.length)`)
+
                 result.push(`for(let ${newIndex} = 0; ${newIndex} < keys_${newIndex}.length; ${newIndex}++){`)
-                result.push(`encoder.addKey("keys_${newIndex}[${newIndex}]").toString()`)
-                encodeTypes(result, valueType, fieldName, "map", `keys_${newIndex}[${newIndex}]`)
+                result.push(`encoder.addKey(keys_${newIndex}[${newIndex}].toString())`)
+                encodeTypes(result, valueType.trim(), fieldName, "map", `keys_${newIndex}[${newIndex}]`)
                 result.push(`}`)
             }
     }
