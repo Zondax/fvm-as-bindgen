@@ -1,22 +1,20 @@
 import path from "path"
 import {NodeKind, SourceKind, CommonFlags, DeclarationStatement, Source, Node, ASTBuilder} from "assemblyscript"
 
-const FILECOIN_DECORATOR = "filecoinBindgen";
 export const VALID_RETURN_TYPES = ["void", "Uint8Array"]
 
-export function filecoinFiles(sources: Source[]){
-    return sources.filter(hasFilecoinDecorator)
+export function chainFiles(sources: Source[]){
+    return sources.filter(hasChainDecorator)
 }
 
-function hasFilecoinDecorator(stmt: Source): boolean {
+function hasChainDecorator(stmt: Source): boolean {
     const status =  (
-        (isEntry(stmt) || stmt.text.includes("@filecoinfile") || false
-            /*stmt.statements.some(
-                (s:any) =>
-                    s instanceof DeclarationStatement &&
-                    utils.hasDecorator(s, FILECOIN_DECORATOR)
-            )*/) &&
-        !stmt.text.includes("@notFilecoinfile")
+        (isEntry(stmt)
+            || stmt.text.includes("@chainfile-index")
+            || stmt.text.includes("@chainfile-state")
+            || false
+        ) &&
+        !stmt.text.includes("@notchainfile")
     );
     return status
 }

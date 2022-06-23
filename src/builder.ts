@@ -12,130 +12,142 @@ export class Builder{
     }
 
     build(source: Source): [string, boolean] {
-        let str = toString(source)
+        if( source.text.includes("@chainfile-index") )
+            return [this.processIndexFile(source), true]
+        if( source.text.includes("@chainfile-state") )
+            return [this.processStateFile(source), false]
 
-        const isFilecoinFile = source.text.includes("@filecoinfile");
-        if(isFilecoinFile) {
-            this.sb.push(getInvokeFunc())
-            this.sb.push(importsInvoke())
+        return [toString(source), false]
+    }
 
-            let invokeCustomMethods: string[] = []
-            const indexesUsed: {[key:string]: boolean} = {}
+    private processIndexFile(source: Source): string {
+        this.sb.push(getInvokeFunc())
+        this.sb.push(importsInvoke())
 
-            let sourceText = source.statements.map((stmt) => {
-                if (isFunction(stmt)) {
-                    const _stmt = stmt as FunctionDeclaration
-                    const decorator = _stmt.decorators ? _stmt.decorators.find(dec => toString(dec.name) == "export_method") : undefined
-                    if (decorator) {
-                        const args = decorator.args
+        let invokeCustomMethods: string[] = []
+        const indexesUsed: {[key:string]: boolean} = {}
 
-                        if(!args
-                            || args.length > 1
-                            || isNaN(parseInt(toString(args[0])))
-                        ) throw new Error("export_method decorator requires only one integer value as argument")
+        let sourceText = source.statements.map((stmt) => {
+            if (isFunction(stmt)) {
+                const _stmt = stmt as FunctionDeclaration
+                const decorator = _stmt.decorators ? _stmt.decorators.find(dec => toString(dec.name) == "export_method") : undefined
+                if (decorator) {
+                    const args = decorator.args
 
-                        const indexStr = toString(args[0])
-                        if(parseInt(indexStr) < 2) throw new Error("export_method decorator index should be higher than 1")
-                        if(indexesUsed[indexStr]) throw new Error(`export_method decorator index ${indexStr} is duplicated`)
+                    if(!args
+                        || args.length > 1
+                        || isNaN(parseInt(toString(args[0])))
+                    ) throw new Error("export_method decorator requires only one integer value as argument")
 
-                        indexesUsed[indexStr] = true
+                    const indexStr = toString(args[0])
+                    if(parseInt(indexStr) < 2) throw new Error("export_method decorator index should be higher than 1")
+                    if(indexesUsed[indexStr]) throw new Error(`export_method decorator index ${indexStr} is duplicated`)
 
-                        const returnTypeStr = toString(_stmt.signature.returnType)
-                        if( !VALID_RETURN_TYPES.includes(returnTypeStr) )
+                    indexesUsed[indexStr] = true
+
+                    const returnTypeStr = toString(_stmt.signature.returnType)
+                    if( !VALID_RETURN_TYPES.includes(returnTypeStr) )
+                        throw new Error(`exported method has an invalid return type [${returnTypeStr}] --> options: [${VALID_RETURN_TYPES.join(",")}]`)
+
+                    if( _stmt.signature.parameters.length != 1 )
+                        throw new Error(`exported method has an invalid arguments amount. Only a ParamsRawResult is allowed`)
+
+                    if( toString(_stmt.signature.parameters[0].type) != "ParamsRawResult" )
+                        throw new Error(`exported method has an invalid argument type [${toString(_stmt.signature.parameters[0].type)}] --> valid one: [ParamsRawResult]`)
+
+                    const funcCall = `__wrapper_${_stmt.name.text}(paramsID)`
+                    const funcSignature = `__wrapper_${_stmt.name.text}(paramsID: u32)`
+
+                    invokeCustomMethods.push(`case ${indexStr}:`)
+                    switch (returnTypeStr){
+                        case "void":
+                            invokeCustomMethods.push(`${funcCall}`)
+                            invokeCustomMethods.push(`case ${indexStr}:return NO_DATA_BLOCK_ID`)
+
+                            this.sb.push(`
+                                function ${funcSignature}:void {
+                                    const params = paramsRaw(paramsID)
+                                    ${_stmt.name.text}(params)
+                                }
+                            `)
+                            break
+                        case "Uint8Array":
+                            invokeCustomMethods.push(`const result = ${funcCall}`)
+                            invokeCustomMethods.push(`return create(DAG_CBOR, result)`)
+
+                            this.sb.push(`
+                                function ${funcSignature}:Uint8Array {
+                                    const params = paramsRaw(paramsID)
+                                    return ${_stmt.name.text}(params)
+                                }
+                            `)
+                            break
+                        default:
                             throw new Error(`exported method has an invalid return type [${returnTypeStr}] --> options: [${VALID_RETURN_TYPES.join(",")}]`)
+                    }
 
-                        if( _stmt.signature.parameters.length != 1 )
-                            throw new Error(`exported method has an invalid arguments amount. Only a ParamsRawResult is allowed`)
+                }
 
-                        if( toString(_stmt.signature.parameters[0].type) != "ParamsRawResult" )
-                            throw new Error(`exported method has an invalid argument type [${toString(_stmt.signature.parameters[0].type)}] --> valid one: [ParamsRawResult]`)
+                if (
+                    _stmt.decorators
+                    &&  _stmt.decorators.some(dec => toString(dec.name) == "constructor")
+                ) {
+                    this.sb[0] = this.sb[0].replace("__constructor-func__", `${_stmt.name.text}(params)`)
+                }
+            }
+            return toString(stmt);
+        })
 
-                        const funcCall = `__wrapper_${_stmt.name.text}(paramsID)`
-                        const funcSignature = `__wrapper_${_stmt.name.text}(paramsID: u32)`
+        this.sb[0] = this.sb[0].replace("__user-methods__", invokeCustomMethods.join("\n"))
 
-                        invokeCustomMethods.push(`case ${indexStr}:`)
-                        switch (returnTypeStr){
-                            case "void":
-                                invokeCustomMethods.push(`${funcCall}`)
-                                invokeCustomMethods.push(`case ${indexStr}:return NO_DATA_BLOCK_ID`)
+        let str = sourceText.concat(this.sb).join("\n")
+        return str
+    }
 
-                                this.sb.push(`
-                                    function ${funcSignature}:void {
-                                        const params = paramsRaw(paramsID)
-                                        ${_stmt.name.text}(params)
-                                    }
-                                `)
-                                break
-                            case "Uint8Array":
-                                invokeCustomMethods.push(`const result = ${funcCall}`)
-                                invokeCustomMethods.push(`return create(DAG_CBOR, result)`)
+    processStateFile(source: Source): string {
+        let sourceText = source.statements.map((stmt) => {
 
-                                this.sb.push(`
-                                    function ${funcSignature}:Uint8Array {
-                                        const params = paramsRaw(paramsID)
-                                        return ${_stmt.name.text}(params)
-                                    }
-                                `)
-                                break
-                            default:
-                                throw new Error(`exported method has an invalid return type [${returnTypeStr}] --> options: [${VALID_RETURN_TYPES.join(",")}]`)
+            if(isClass(stmt)){
+                let _stmt = stmt as ClassDeclaration
+
+                // Remove base functions from base state class
+                const decorator_1 = _stmt.decorators ? _stmt.decorators.find(dec => toString(dec.name) == "base_state") : undefined
+                if (decorator_1) {
+                    _stmt.members = _stmt.members.filter(mem => {
+                        if(isMethod(mem)){
+                            const _mem = mem as FunctionDeclaration
+                            return toString(_mem.name) != "save" && toString(_mem.name) != "load"
                         }
-
-                    }
-
-                    if (
-                        _stmt.decorators
-                        &&  _stmt.decorators.some(dec => toString(dec.name) == "constructor")
-                    ) {
-                        this.sb[0] = this.sb[0].replace("__constructor-func__", `${_stmt.name.text}(params)`)
-                    }
+                        return true
+                    })
+                    let classStr = toString(stmt)
+                    return classStr
                 }
 
-                if(isClass(stmt)){
-                    let _stmt = stmt as ClassDeclaration
+                const decorator_2 = _stmt.decorators ? _stmt.decorators.find(dec => toString(dec.name) == "state") : undefined
+                if (decorator_2) {
+                    // Encode func
+                    const fields = _stmt.members.filter(mem => isField(mem)).map(field => toString(field as FieldDeclaration))
+                    const encodeFunc = encode(fields).join("\n")
 
-                    // Remove base functions from base state class
-                    const decorator_1 = _stmt.decorators ? _stmt.decorators.find(dec => toString(dec.name) == "base_state") : undefined
-                    if (decorator_1) {
-                        _stmt.members = _stmt.members.filter(mem => {
-                            if(isMethod(mem)){
-                                const _mem = mem as FunctionDeclaration
-                                return toString(_mem.name) != "save" && toString(_mem.name) != "load"
-                            }
-                            return true
-                        })
-                        let classStr = toString(stmt)
-                        return classStr
-                    }
+                    // Base func
+                    const [ imports, funcs ] = getStateFunc(toString(_stmt.name))
 
-                    const decorator_2 = _stmt.decorators ? _stmt.decorators.find(dec => toString(dec.name) == "state") : undefined
-                    if (decorator_2) {
-                        // Encode func
-                        const fields = _stmt.members.filter(mem => isField(mem)).map(field => toString(field as FieldDeclaration))
-                        const encodeFunc = encode(fields).join("\n")
+                    let classStr = toString(stmt)
+                    classStr = imports + "\n" + classStr.slice(0, classStr.lastIndexOf("}"));
+                    classStr += `
+                        ${encodeFunc}
+                        ${funcs}
+                    }`;
 
-                        // Base func
-                        const [ imports, funcs ] = getStateFunc(toString(_stmt.name))
-
-                        let classStr = toString(stmt)
-                        classStr = imports + "\n" + classStr.slice(0, classStr.lastIndexOf("}"));
-                        classStr += `
-                            ${encodeFunc}
-                            ${funcs}
-                        }`;
-
-                        return classStr
-                    }
+                    return classStr
                 }
+            }
 
-                return toString(stmt);
-            })
+            return toString(stmt);
+        })
 
-            this.sb[0] = this.sb[0].replace("__user-methods__", invokeCustomMethods.join("\n"))
-
-            str =       sourceText.concat(this.sb).join("\n")
-        }
-
-        return [str, isFilecoinFile]
+        let str = sourceText.concat(this.sb).join("\n")
+        return str
     }
 }

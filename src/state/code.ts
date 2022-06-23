@@ -2,7 +2,7 @@ export const getStateFunc = (stateClassName: string) => {
     const imports = `
         import {CBOREncoder, CBORDecoder} from "@zondax/assemblyscript-cbor/assembly"
         
-        import {Cid} from "@zondax/fvm-as-sdk/assembly/env";
+        import {Cid, DAG_CBOR} from "@zondax/fvm-as-sdk/assembly/env";
         import {Get, Put, root} from "@zondax/fvm-as-sdk/assembly/helpers";
         import {setRoot} from "@zondax/fvm-as-sdk/assembly/wrappers";
     `

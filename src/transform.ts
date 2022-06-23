@@ -26,7 +26,7 @@
 import { Transform } from "assemblyscript/asc"
 import { Parser, Source } from "assemblyscript"
 
-import {filecoinFiles, isEntry, posixRelativePath} from "./utils.js";
+import {chainFiles, isEntry, posixRelativePath} from "./utils.js";
 import {Builder} from "./builder.js";
 
 export class MyTransform extends Transform {
@@ -40,15 +40,15 @@ export class MyTransform extends Transform {
 
         let newParser = new Parser(parser.diagnostics);
 
-        let filecoinDecoratorFound = false
+        let chainDecoratorFound = false
 
-        // Filter for filecoin files
-        let files = filecoinFiles(parser.sources);
+        // Filter for smart contract files
+        let files = chainFiles(parser.sources);
 
         // Visit each file
         files.forEach((source) => {
             if (source.internalPath.includes("index-stub")) return;
-            let writeOut = /\/\/.*@filecoinfile .*out/.test(source.text);
+            let writeOut = /\/\/.*@chainfile .*out/.test(source.text);
 
             // Remove from logs in parser
             parser.donelog.delete(source.internalPath);
@@ -63,9 +63,9 @@ export class MyTransform extends Transform {
             );
 
             // Build new Source
-            let [sourceText, isFilecoinFound] = new Builder().build(source);
+            let [sourceText, isChainFound] = new Builder().build(source);
 
-            if(isFilecoinFound) filecoinDecoratorFound = true
+            if(isChainFound) chainDecoratorFound = true
 
             if (writeOut) {
                 writeFile(
@@ -87,6 +87,6 @@ export class MyTransform extends Transform {
             parser.sources.push(newSource);
         });
 
-        if(!filecoinDecoratorFound) throw new Error(`filecoin decorator is missing. Please add "// @filecoinfile" once at the very beginning of the index file.`)
+        if(!chainDecoratorFound) throw new Error(`chain decorator is missing. Please add "// @indexfile" once at the very beginning of the index file.`)
     }
 }
