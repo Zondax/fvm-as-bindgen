@@ -25,7 +25,7 @@ export function isEntry(source: Source | Node): boolean {
     return source.range.source.sourceKind == SourceKind.USER_ENTRY;
 }
 
-function isClass(type: Node): boolean {
+export function isClass(type: Node): boolean {
     return type.kind == NodeKind.CLASSDECLARATION;
 }
 
@@ -33,7 +33,11 @@ export function isFunction(type: Node): boolean {
     return type.kind == NodeKind.FUNCTIONDECLARATION;
 }
 
-function isField(mem: DeclarationStatement) {
+export function isMethod(type: Node): boolean {
+    return type.kind == NodeKind.METHODDECLARATION;
+}
+
+export function isField(mem: DeclarationStatement) {
     return mem.kind == NodeKind.FIELDDECLARATION;
 }
 

@@ -1,7 +1,9 @@
-import { Source, FunctionDeclaration } from "assemblyscript"
+import { Source, FunctionDeclaration, ClassDeclaration, FieldDeclaration } from "assemblyscript"
 import {
-    importsInvoke, toString, isFunction, getInvokeFunc, VALID_RETURN_TYPES
+    importsInvoke, toString, isFunction, isClass, getInvokeFunc, VALID_RETURN_TYPES, isField, isMethod
 } from "./utils.js";
+import {encode} from "./cbor/encoding.js";
+import {getStateFunc} from "./state/code.js";
 
 export class Builder{
     sb: string[]
@@ -86,6 +88,44 @@ export class Builder{
                         &&  _stmt.decorators.some(dec => toString(dec.name) == "constructor")
                     ) {
                         this.sb[0] = this.sb[0].replace("__constructor-func__", `${_stmt.name.text}(params)`)
+                    }
+                }
+
+                if(isClass(stmt)){
+                    let _stmt = stmt as ClassDeclaration
+
+                    // Remove base functions from base state class
+                    const decorator_1 = _stmt.decorators ? _stmt.decorators.find(dec => toString(dec.name) == "base_state") : undefined
+                    if (decorator_1) {
+                        _stmt.members = _stmt.members.filter(mem => {
+                            if(isMethod(mem)){
+                                const _mem = mem as FunctionDeclaration
+                                return toString(_mem.name) != "save" && toString(_mem.name) != "load"
+                            }
+                            return true
+                        })
+                        let classStr = toString(stmt)
+                        return classStr
+                    }
+
+                    const decorator_2 = _stmt.decorators ? _stmt.decorators.find(dec => toString(dec.name) == "state") : undefined
+                    if (decorator_2) {
+                        // Encode func
+                        const fields = _stmt.members.filter(mem => isField(mem)).map(field => toString(field as FieldDeclaration))
+                        const encodeFunc = encode(fields).join("\n")
+
+                        // Base func
+                        const [ imports, funcs ] = getStateFunc(toString(_stmt.name))
+
+                        let classStr = toString(stmt)
+                        classStr = imports + "\n" + classStr.slice(0, classStr.lastIndexOf("}"));
+                        classStr += `
+                            ${encodeFunc}
+                            ${funcs}
+                        }`;
+
+                        console.log(classStr)
+                        return classStr
                     }
                 }
 
