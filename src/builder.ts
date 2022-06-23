@@ -124,7 +124,6 @@ export class Builder{
                             ${funcs}
                         }`;
 
-                        console.log(classStr)
                         return classStr
                     }
                 }
