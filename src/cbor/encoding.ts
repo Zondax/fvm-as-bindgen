@@ -9,7 +9,7 @@ export function encode(fields: string[]){
     fields.forEach( field => {
         const [name, typeAndDefault] = field.split(":")
         const [type, defaultVal] = typeAndDefault.split("=")
-        result.push(`encoder.addKey("${name}")`)
+        result.push(`encoder.addKey("${name.trim()}")`)
         encodeTypes(result, type.trim(), name.trim(), "","")
     })
 
@@ -73,7 +73,6 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
             if( type.startsWith("Array") ){
                 const arrayType = type.split("<")[1].split(">")[0]
 
-                result.push(`encoder.addKey("${fieldName}")`)
                 result.push(`encoder.addArray(this.${fieldName}.length)`)
                 let newIndex = getNewIndexLetter(result, indexName)
                 result.push(`for(let ${newIndex} = 0; ${newIndex} < this.${fieldName}.length; ${newIndex}++){`)
@@ -89,7 +88,6 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
                 let newIndex = getNewIndexLetter(result, indexName)
                 result.push(`let keys_${newIndex} = this.${fieldName}.keys()`)
 
-                result.push(`encoder.addKey("${fieldName}")`)
                 result.push(`encoder.addObject(keys_${newIndex}.length)`)
 
                 result.push(`for(let ${newIndex} = 0; ${newIndex} < keys_${newIndex}.length; ${newIndex}++){`)
