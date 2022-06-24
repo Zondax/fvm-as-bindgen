@@ -4,6 +4,7 @@ import {
 } from "./utils.js";
 import {encode} from "./cbor/encoding.js";
 import {getStateFunc} from "./state/code.js";
+import {decode} from "./cbor/decoding.js";
 
 export class Builder{
     sb: string[]
@@ -129,6 +130,7 @@ export class Builder{
                     // Encode func
                     const fields = _stmt.members.filter(mem => isField(mem)).map(field => toString(field as FieldDeclaration))
                     const encodeFunc = encode(fields).join("\n")
+                    const decodeFunc = decode(toString(_stmt.name), fields).join("\n")
 
                     // Base func
                     const [ imports, funcs ] = getStateFunc(toString(_stmt.name))
@@ -137,6 +139,7 @@ export class Builder{
                     classStr = imports + "\n" + classStr.slice(0, classStr.lastIndexOf("}"));
                     classStr += `
                         ${encodeFunc}
+                        ${decodeFunc}
                         ${funcs}
                     }`;
 

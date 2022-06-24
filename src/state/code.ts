@@ -1,6 +1,7 @@
 export const getStateFunc = (stateClassName: string) => {
     const imports = `
         import {CBOREncoder, CBORDecoder} from "@zondax/assemblyscript-cbor/assembly"
+        import {Value, Arr, Str, Integer, Obj, Float} from "@zondax/assemblyscript-cbor/assembly/types"
         
         import {Cid, DAG_CBOR} from "@zondax/fvm-as-sdk/assembly/env";
         import {Get, Put, root} from "@zondax/fvm-as-sdk/assembly/helpers";

@@ -1,6 +1,6 @@
-/*const letters = ["a","b","c","d","e","f","g","h","i","j","k"]
+const letters = ["a","b","c","d","e","f","g","h","i","j","k"]
 
-export function encode(className: string, fields: string[]){
+export function decode(className: string, fields: string[]){
     const result: string[] = []
     result.push(`protected parse(raw: Value): ${className} {`)
     result.push(`if( !raw.isObj ) throw new Error("raw state should be an object")`)
@@ -8,8 +8,11 @@ export function encode(className: string, fields: string[]){
 
     const fieldsForState: string[] = []
     fields.forEach( field => {
-        const [name, type] = field.split(":")
+        const [name, typeAndDefault] = field.split(":")
+        const [type, defaultVal] = typeAndDefault.split("=")
         decodeTypes(result, "object","state", name.trim(), type.trim(), "")
+
+        fieldsForState.push(name.trim())
     })
 
     result.push(`return new State(${fieldsForState.join(",")})`)
@@ -18,53 +21,47 @@ export function encode(className: string, fields: string[]){
     return result
 }
 
-export function decodeTypes(result: string[], parentType: string, parentName:string, fieldName: string, type: string, indexName: string){
-    result.push(`if( !rawStateObj.has("${fieldName}") ) throw new Error("state should contain the key ${fieldName}")`)
-    const index = indexName != "" ? `[${indexName}]` : ""
+export function decodeTypes(result: string[], parentType: string, parentName:string, fieldName: string, fieldType: string, indexName: string){
 
-    switch (type){
-        case "u64":
-        case "u32":
-        case "u16":
-        case "u8":
-        case "i64":
-        case "i32":
-        case "i16":
-        case "i8":
-            result.push(`${type}((state.get("${fieldName}") as Integer).valueOf())`)
-            break
+        const translated = translateBasicTypes(parentName, parentType, fieldName, fieldType, false);
+        if( translated != "" ) {
+            result.push(`let ${fieldName} = ${translated}`)
+            return
+        }
 
-        case "f64":
-        case "f32":
-            result.push(`${type}((state.get("${fieldName}") as Float).valueOf())`)
-            break
+        if( fieldType.startsWith("Array") ){
+            const elementType = fieldType.split("<")[1].split(">")[0]
 
-        case "string":
-            result.push(`(state.get("${fieldName}") as String).valueOf()`)
-            break
+            let accessor = getAccessor(parentName, parentType, fieldName, false)
+            result.push(`let ${fieldName}_raw = (${accessor} as Arr).valueOf()`)
+            result.push(`let ${fieldName} = new Array<${elementType}>()`)
 
-        case "boolean":
-            result.push(`(state.get("${fieldName}") as Boolean).valueOf()`)
-            break
+            let newIndex = getNewIndexLetter(result, indexName)
+            result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldName}.length; ${newIndex}++){`)
+            result.push(`${fieldName}.push(${translateBasicTypes(`${fieldName}_raw`, "array", newIndex, elementType, true)})`)
+            result.push(`}`)
+            return
+        }
 
-        case "null":
-            result.push(`(state.get("${fieldName}") as Null).valueOf()`)
-            break
+        if( fieldType.startsWith("Map") ){
+            let [keyType, valueType] = fieldType.split("<")[1].split(">")[0].split(",")
+            keyType = keyType.trim()
+            valueType = valueType.trim()
 
-        default:
-            if( type.startsWith("Array") ){
-                const arrayType = type.split("<")[1].split(">")[0]
+            let accessor = getAccessor(parentName, parentType, fieldName, false)
+            result.push(`let ${fieldName}_raw = (${accessor} as Obj).valueOf()`)
+            result.push(`let ${fieldName}_keys =  ${fieldName}_raw.keys()`)
+            result.push(`let ${fieldName} = new Map<${keyType}, ${valueType}>()`)
 
-                result.push(`encoder.addArray("${fieldName}", this.${fieldName}.length)`)
-                let newIndex = getNewIndexLetter(result, indexName)
-                result.push(`for(let ${newIndex} = 0; ${newIndex} < this.${fieldName}.length; ${newIndex}++){`)
-                encodeTypes(result, arrayType, fieldName, newIndex)
-                result.push(`}`)
-            }
-    }
+            let newIndex = getNewIndexLetter(result, indexName)
+            result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldName}_keys.length; ${newIndex}++){`)
+            result.push(`let key = ${fieldName}_keys.at(${newIndex}).toString()`)
+            result.push(`${fieldName}.set(key, ${translateBasicTypes(`${fieldName}_raw`, "object", "key", valueType, true)})`)
+            result.push(`}`)
+        }
 }
 
-export function getNewIndexLetter(result: string[], currentLetter: string){
+function getNewIndexLetter(result: string[], currentLetter: string){
     if(currentLetter == "") return letters[0]
 
     let isUsed = true, i = 0, newLetter = ""
@@ -77,4 +74,53 @@ export function getNewIndexLetter(result: string[], currentLetter: string){
     if( i == letters.length ) throw new Error("no more indexes to use")
     return newLetter
 }
-*/
+
+function translateBasicTypes( parentName:string, parentType: string, fieldName: string, fieldType: string, isFieldReference: boolean){
+    let accessor = getAccessor(parentName, parentType, fieldName, isFieldReference );
+
+    switch (fieldType) {
+        case "u64":
+        case "u32":
+        case "u16":
+        case "u8":
+        case "i64":
+        case "i32":
+        case "i16":
+        case "i8":
+            return `${fieldType}((${accessor} as Integer).valueOf())`
+
+
+        case "f64":
+        case "f32":
+            return `${fieldType}((${accessor} as Float).valueOf())`
+
+
+        case "string":
+            return `(${accessor} as Str).valueOf()`
+
+
+        case "boolean":
+            return `(${accessor} as Boolean).valueOf()`
+
+
+        case "null":
+            return `(${accessor} as Null).valueOf()`
+
+        default:
+            return ""
+    }
+}
+
+function getAccessor(parentName:string, parentType: string, fieldName: string, isFieldReference: boolean ){
+    switch (parentType){
+        case "object":
+            if( isFieldReference ) return `${parentName}.get(${fieldName})`
+            return `${parentName}.get("${fieldName}")`
+
+        case "array":
+            return `${parentName}.at(${fieldName})`
+
+        default:
+            return ""
+    }
+}
