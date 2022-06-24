@@ -106,6 +106,8 @@ export class Builder{
     }
 
     processStateFile(source: Source): string {
+        let importsToAdd :string[] = []
+
         let sourceText = source.statements.map((stmt) => {
 
             if(isClass(stmt)){
@@ -134,9 +136,10 @@ export class Builder{
 
                     // Base func
                     const [ imports, funcs ] = getStateFunc(toString(_stmt.name))
+                    importsToAdd.push(imports)
 
                     let classStr = toString(stmt)
-                    classStr = imports + "\n" + classStr.slice(0, classStr.lastIndexOf("}"));
+                    classStr = classStr.slice(0, classStr.lastIndexOf("}"));
                     classStr += `
                         ${encodeFunc}
                         ${decodeFunc}
@@ -150,7 +153,7 @@ export class Builder{
             return toString(stmt);
         })
 
-        let str = sourceText.concat(this.sb).join("\n")
+        let str = importsToAdd.concat(sourceText.concat(this.sb)).join("\n")
         return str
     }
 }

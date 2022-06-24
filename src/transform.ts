@@ -26,7 +26,7 @@
 import { Transform } from "assemblyscript/asc"
 import { Parser, Source } from "assemblyscript"
 
-import {chainFiles, isEntry, posixRelativePath} from "./utils.js";
+import {chainFiles, isEntry, posixRelativePath, toString} from "./utils.js";
 import {Builder} from "./builder.js";
 
 export class MyTransform extends Transform {
@@ -48,42 +48,61 @@ export class MyTransform extends Transform {
         // Visit each file
         files.forEach((source) => {
             if (source.internalPath.includes("index-stub")) return;
-            let writeOut = /\/\/.*@chainfile .*out/.test(source.text);
+            let writeOut = /\/\/.*@chainfile-.*out/.test(source.text);
 
-            // Remove from logs in parser
+            // Remove current source from logs in parser
             parser.donelog.delete(source.internalPath);
             parser.seenlog.delete(source.internalPath);
 
-            // Remove from programs sources
-            parser.sources = parser.sources.filter(
+            // Remove current source from parser sources
+            // @ts-ignore
+            this.parser.sources = this.parser.sources.filter(
                 (_source: Source) => _source !== source
             );
+
+            // Remove current source from programs sources
             this.program.sources = this.program.sources.filter(
                 (_source: Source) => _source !== source
             );
 
             // Build new Source
             let [sourceText, isChainFound] = new Builder().build(source);
-
             if(isChainFound) chainDecoratorFound = true
 
             if (writeOut) {
                 writeFile(
-                    posixRelativePath("out", source.normalizedPath),
+                    source.normalizedPath + ".source.out",
                     sourceText,
                     baseDir
                 );
             }
+
             // Parses file and any new imports added to the source
             newParser.parseFile(
                 sourceText,
                 posixRelativePath(isEntry(source) ? "" : "./", source.normalizedPath),
                 isEntry(source)
             );
+
+            // Get our modified source, now parsed by the new parser
             let newSource = newParser.sources.pop()!;
+
+            if (writeOut) {
+                writeFile(
+                    source.normalizedPath + ".parsed.out",
+                    toString(newSource),
+                    baseDir
+                );
+            }
+
+            // Add new modified source to program sources
             this.program.sources.push(newSource);
+
+            // Add new modified source to logs in parser
             parser.donelog.add(source.internalPath);
             parser.seenlog.add(source.internalPath);
+
+            // Add new modified source to parser sources
             parser.sources.push(newSource);
         });
 

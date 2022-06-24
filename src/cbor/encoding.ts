@@ -82,8 +82,6 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
 
             if( type.startsWith("Map") ){
                 const [keyType, valueType] = type.split("<")[1].split(">")[0].split(",")
-                console.log(keyType)
-                console.log(valueType)
 
                 let newIndex = getNewIndexLetter(result, indexName)
                 result.push(`let keys_${newIndex} = this.${fieldName}.keys()`)
