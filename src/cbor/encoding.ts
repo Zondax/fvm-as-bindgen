@@ -78,6 +78,7 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
                 result.push(`for(let ${newIndex} = 0; ${newIndex} < this.${fieldName}.length; ${newIndex}++){`)
                 encodeTypes(result, arrayType, fieldName, "array", newIndex)
                 result.push(`}`)
+                return
             }
 
             if( type.startsWith("Map") ){
@@ -92,7 +93,10 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
                 result.push(`encoder.addKey(keys_${newIndex}[${newIndex}].toString())`)
                 encodeTypes(result, valueType.trim(), fieldName, "map", `keys_${newIndex}[${newIndex}]`)
                 result.push(`}`)
+                return
             }
+
+            throw new Error(`type ${type} is not supported for encoding`)
     }
 }
 

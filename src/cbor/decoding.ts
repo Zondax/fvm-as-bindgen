@@ -58,7 +58,10 @@ export function decodeTypes(result: string[], parentType: string, parentName:str
             result.push(`let key = ${fieldName}_keys.at(${newIndex}).toString()`)
             result.push(`${fieldName}.set(key, ${translateBasicTypes(`${fieldName}_raw`, "object", "key", valueType, true)})`)
             result.push(`}`)
+            return
         }
+
+        throw new Error(`type ${fieldType} is not supported for decoding`)
 }
 
 function getNewIndexLetter(result: string[], currentLetter: string){
