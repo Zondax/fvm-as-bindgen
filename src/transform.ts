@@ -48,7 +48,7 @@ export class MyTransform extends Transform {
         // Visit each file
         files.forEach((source) => {
             if (source.internalPath.includes("index-stub")) return;
-            let writeOut = /\/\/.*@chainfile-.*out/.test(source.text);
+            let writeOut = /\/\/.*@chainfile-.*/.test(source.text);
 
             // Remove current source from logs in parser
             parser.donelog.delete(source.internalPath);
