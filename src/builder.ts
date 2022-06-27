@@ -3,7 +3,7 @@ import {
     importsInvoke, toString, isFunction, isClass, getInvokeFunc, VALID_RETURN_TYPES, isField, isMethod
 } from "./utils.js";
 import {encode} from "./cbor/encoding.js";
-import {getStateFunc} from "./state/code.js";
+import {constructorFunc, staticFuncs, getStateFunc} from "./state/code.js";
 import {decode} from "./cbor/decoding.js";
 
 export class Builder{
@@ -133,6 +133,8 @@ export class Builder{
                     const fields = _stmt.members.filter(mem => isField(mem)).map(field => toString(field as FieldDeclaration))
                     const encodeFunc = encode(fields).join("\n")
                     const decodeFunc = decode(toString(_stmt.name), fields).join("\n")
+                    const constFunc = constructorFunc(fields)
+                    const defaultFunc = staticFuncs(toString(_stmt.name), fields)
 
                     // Base func
                     const [ imports, funcs ] = getStateFunc(toString(_stmt.name))
@@ -141,6 +143,8 @@ export class Builder{
                     let classStr = toString(stmt)
                     classStr = classStr.slice(0, classStr.lastIndexOf("}"));
                     classStr += `
+                        ${constFunc}
+                        ${defaultFunc}
                         ${encodeFunc}
                         ${decodeFunc}
                         ${funcs}
