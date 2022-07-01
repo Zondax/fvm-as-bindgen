@@ -104,7 +104,7 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
                 return
             }
 
-            throw new Error(`type ${type} is not supported for encoding`)
+            throw new Error(`type [${type}] is not supported for encoding`)
     }
 }
 
