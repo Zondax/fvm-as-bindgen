@@ -62,6 +62,7 @@ export function importsInvoke(): string{
         import {NO_DATA_BLOCK_ID, DAG_CBOR} from "@zondax/fvm-as-sdk/assembly/env";
         import {methodNumber, usrUnhandledMsg, create, paramsRaw} from "@zondax/fvm-as-sdk/assembly/wrappers";
         import {isConstructorCaller} from "@zondax/fvm-as-sdk/assembly/helpers";
+        import {decodeParamsRaw} from "@zondax/fvm-as-sdk/assembly/utils/params";
     `
 }
 
@@ -79,7 +80,7 @@ export function getInvokeFunc(): string{
               // Nobody else should call the constructor
               if( !isConstructorCaller() ) return NO_DATA_BLOCK_ID
               
-              const params = paramsRaw(paramsID)
+              const decoded = decodeParamsRaw(paramsRaw(paramsID))
               
               // Call constructor func.
               __constructor-func__

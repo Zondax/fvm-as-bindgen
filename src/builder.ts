@@ -48,10 +48,10 @@ export class Builder{
                     indexesUsed[indexStr] = true
 
                     if( _stmt.signature.parameters.length != 1 )
-                        throw new Error(`exported method has an invalid arguments amount. Only a ParamsRawResult is allowed`)
+                        throw new Error(`exported method has an invalid arguments amount. Only a Value is allowed`)
 
-                    if( toString(_stmt.signature.parameters[0].type) != "ParamsRawResult" )
-                        throw new Error(`exported method has an invalid argument type [${toString(_stmt.signature.parameters[0].type)}] --> valid one: [ParamsRawResult]`)
+                    if( toString(_stmt.signature.parameters[0].type) != "Value" )
+                        throw new Error(`exported method has an invalid argument type [${toString(_stmt.signature.parameters[0].type)}] --> valid one: [Value]`)
 
                     const funcCall = `__wrapper_${_stmt.name.text}(paramsID)`
                     const funcSignature = `__wrapper_${_stmt.name.text}(paramsID: u32)`
@@ -67,8 +67,7 @@ export class Builder{
 
                             this.sb.push(`
                                 function ${funcSignature}:void {
-                                    const params = paramsRaw(paramsID)
-                                    ${_stmt.name.text}(params)
+                                    ${_stmt.name.text}(decodeParamsRaw(paramsRaw(paramsID)))
                                 }
                             `)
                             break
@@ -78,8 +77,7 @@ export class Builder{
 
                             this.sb.push(`
                                 function ${funcSignature}:Uint8Array {
-                                    const params = paramsRaw(paramsID)
-                                    const result = ${_stmt.name.text}(params)
+                                    const result = ${_stmt.name.text}(decodeParamsRaw(paramsRaw(paramsID)))
                                     
                                     return ${returnCall}(result) 
                                 }
@@ -94,7 +92,7 @@ export class Builder{
                     _stmt.decorators
                     &&  _stmt.decorators.some(dec => toString(dec.name) == "constructor")
                 ) {
-                    this.sb[0] = this.sb[0].replace("__constructor-func__", `${_stmt.name.text}(params)`)
+                    this.sb[0] = this.sb[0].replace("__constructor-func__", `${_stmt.name.text}(decoded)`)
                 }
             }
             return toString(stmt);
