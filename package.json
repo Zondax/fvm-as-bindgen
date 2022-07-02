@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "build:fix_transform": "find dist/. -type f -maxdepth 1 -name '*.*' -exec sed -i \"\" \"s/'assemblyscript\\/asc'/'assemblyscript\\/transform'/\" {} +",
+    "build:fix_transform": "find dist/. -type f -maxdepth 1 -name '*.*' -exec sed -i \"s/'assemblyscript\\/asc'/'assemblyscript\\/transform'/\" {} +",
     "postbuild": "yarn build:fix_transform"
   },
   "author": "Zondax AG",
