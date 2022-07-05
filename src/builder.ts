@@ -9,6 +9,7 @@ import { getClassDecodeFunc, getClassEncodeFunc, getClassStaticFuncs } from './c
 import { getConstructor } from './codegen/state/utils.js'
 import { isBaseStateClass, isConstructorMethod, isExportMethod, isStateClass } from './codegen/utils.js'
 import { getCborImports } from './codegen/cbor/imports.js'
+import { generateFuncAbi } from './codegen/abi/index.js'
 
 type IndexesUsed = { [key: string]: boolean }
 
@@ -86,7 +87,9 @@ export class Builder {
         const returnCall = `__encodeReturn_${_stmt.name.text}`
 
         const paramFields = _stmt.signature.parameters.map((field) => toString(field))
-        const paramsParserLines = getParamsDecodeLines(paramFields)
+        const [decodeParamsLines, paramsToCall, paramsAbi] = getParamsDecodeLines(paramFields)
+
+        const funcAbi = generateFuncAbi(_stmt.name.text, paramsAbi, [])
 
         const returnTypeStr = toString(_stmt.signature.returnType)
 
@@ -99,8 +102,8 @@ export class Builder {
                 this.sb.push(`
                                 function ${funcSignature}:void {
                                     const decoded = decodeParamsRaw(paramsRaw(paramsID))
-                                    ${paramsParserLines[0].join('\n')}
-                                    ${_stmt.name.text}(${paramsParserLines[1].join(',')})
+                                    ${decodeParamsLines.join('\n')}
+                                    ${_stmt.name.text}(${paramsToCall.join(',')})
                                 }
                             `)
                 break
@@ -111,9 +114,9 @@ export class Builder {
                 this.sb.push(`
                                 function ${funcSignature}:Uint8Array {
                                     const decoded = decodeParamsRaw(paramsRaw(paramsID))
-                                    ${paramsParserLines[0].join('\n')}
+                                    ${decodeParamsLines.join('\n')}
                                     
-                                    const result = ${_stmt.name.text}(${paramsParserLines[1].join(',')})
+                                    const result = ${_stmt.name.text}(${paramsToCall.join(',')})
                                     
                                     return ${returnCall}(result) 
                                 }
