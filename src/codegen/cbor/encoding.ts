@@ -9,7 +9,6 @@ export function getCborEncode(fields: string[], parentName: string): string[] {
 
 export function encodeFields(fields: string[], parentName: string) {
     const result: string[] = []
-
     result.push(`encoder.addArray(${fields.length})`)
 
     fields.forEach((field) => {
@@ -81,7 +80,7 @@ export function encodeField(result: string[], type: string, fieldName: string, p
                 const arrayType = type.split('<')[1].split('>')[0]
 
                 result.push(`encoder.addArray(${fieldAccessor}.length)`)
-                let newIndex = getNewIndexLetter(result, indexName)
+                let newIndex = getNewIndexLetter(result)
                 result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldAccessor}.length; ${newIndex}++){`)
                 encodeField(result, arrayType, fieldName, parentName, 'array', newIndex)
                 result.push(`}`)
@@ -91,7 +90,7 @@ export function encodeField(result: string[], type: string, fieldName: string, p
             if (type.startsWith('Map')) {
                 const [keyType, valueType] = type.split('<')[1].split('>')[0].split(',')
 
-                let newIndex = getNewIndexLetter(result, indexName)
+                let newIndex = getNewIndexLetter(result)
                 result.push(`let keys_${newIndex} = ${fieldAccessor}.keys()`)
 
                 result.push(`encoder.addObject(keys_${newIndex}.length)`)
@@ -110,12 +109,12 @@ export function encodeField(result: string[], type: string, fieldName: string, p
     }
 }
 
-export function getNewIndexLetter(result: string[], currentLetter: string) {
-    if (currentLetter == '') return letters[0]
-
+export function getNewIndexLetter(result: string[]) {
     let isUsed = true,
         i = 0,
-        newLetter = ''
+        newLetter = letters[i]
+
+    isUsed = result.some((line) => line.includes(`let ${newLetter}`))
     while (isUsed && i != letters.length) {
         i++
         newLetter = letters[i]
