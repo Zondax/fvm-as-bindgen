@@ -9,19 +9,23 @@ import { getClassDecodeFunc, getClassEncodeFunc, getClassStaticFuncs } from './c
 import { getConstructor } from './codegen/state/utils.js'
 import { isBaseStateClass, isConstructorMethod, isExportMethod, isStateClass } from './codegen/utils.js'
 import { getCborImports } from './codegen/cbor/imports.js'
-import { generateFuncAbi } from './codegen/abi/index.js'
+import { generateFieldAbi, generateFuncAbi } from './codegen/abi/index.js'
+import { ABI } from './codegen/abi/types.js'
 
 type IndexesUsed = { [key: string]: boolean }
 
 export class Builder {
     sb: string[]
+    abi: ABI
+
     constructor() {
         this.sb = []
+        this.abi = []
     }
 
-    build(source: Source): [string, boolean] {
-        if (isEntry(source)) return [this.processIndexFile(source), true]
-        return [this.processUserFile(source), false]
+    build(source: Source): [ABI, string, boolean] {
+        const newSource = isEntry(source) ? this.processIndexFile(source) : this.processUserFile(source)
+        return [this.abi, newSource, isEntry(source)]
     }
 
     protected processIndexFile(source: Source): string {
@@ -89,7 +93,7 @@ export class Builder {
         const paramFields = _stmt.signature.parameters.map((field) => toString(field))
         const [decodeParamsLines, paramsToCall, paramsAbi] = getParamsDecodeLines(paramFields)
 
-        const funcAbi = generateFuncAbi(_stmt.name.text, paramsAbi, [])
+        this.abi.push(generateFuncAbi(_stmt.name.text, paramsAbi, []))
 
         const returnTypeStr = toString(_stmt.signature.returnType)
 
@@ -178,13 +182,15 @@ export class Builder {
 
     protected handleCustomClass(stmt: ClassDeclaration) {
         const fields = stmt.members.filter((mem) => isField(mem)).map((field) => toString(field as FieldDeclaration))
-        const encodeFunc = getClassEncodeFunc(toString(stmt.name), fields).join('\n')
-        const decodeFunc = getClassDecodeFunc(toString(stmt.name), fields).join('\n')
+        const encodeFunc = getClassEncodeFunc(toString(stmt.name), fields)
+        const [decodeFunc, _, paramsAbi] = getClassDecodeFunc(toString(stmt.name), fields)
         const staticFunc = getClassStaticFuncs(toString(stmt.name), fields)
         const [constFunc, constSignature] = getConstructor(fields, false)
 
         const cborImports = getCborImports(toString(stmt.name))
         if (!this.sb.includes(cborImports)) this.sb.push(cborImports)
+
+        this.abi.push(generateFieldAbi(stmt.name.text, paramsAbi))
 
         stmt.members.map((_mem) => {
             if (isMethod(_mem) && toString(_mem.name) == 'constructor')
@@ -200,8 +206,8 @@ export class Builder {
         classStr += `
                 ${constFunc}
                 ${staticFunc}
-                ${encodeFunc}
-                ${decodeFunc}
+                ${encodeFunc.join('\n')}
+                ${decodeFunc.join('\n')}
             }`
 
         return classStr

@@ -6,10 +6,10 @@ export function getCborDecode(fields: string[], entryFieldName: string): [string
     const result: string[] = []
     const paramsAbi: ParamsABI[] = []
 
-    const fieldsForState: string[] = []
+    const fieldsToCall: string[] = []
     fields.forEach((field, index) => {
         const [name, typeAndDefault] = field.split(':')
-        const [type, defaultVal] = typeAndDefault.split('=')
+        const [type, defaultValue] = typeAndDefault.split('=')
         decodeTypes(result, 'array', entryFieldName, name.trim(), type.trim(), index.toString())
 
         fieldsToCall.push(name.trim())

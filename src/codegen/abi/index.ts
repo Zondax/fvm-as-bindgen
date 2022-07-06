@@ -1,4 +1,4 @@
-import { FunctionABI, ParamsABI, ReturnABI } from './types.js'
+import { FieldABI, FunctionABI, ParamsABI, ReturnABI } from './types.js'
 
 export const generateFuncAbi = (funcName: string, params: ParamsABI[], ret: ReturnABI[]): FunctionABI => {
     return {
@@ -6,5 +6,13 @@ export const generateFuncAbi = (funcName: string, params: ParamsABI[], ret: Retu
         type: 'function',
         params,
         return: ret,
+    }
+}
+
+export const generateFieldAbi = (funcName: string, params: ParamsABI[]): FieldABI => {
+    return {
+        name: funcName,
+        type: 'field_type',
+        params,
     }
 }

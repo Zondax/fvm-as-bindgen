@@ -17,3 +17,11 @@ export type FunctionABI = {
     params: ParamsABI[]
     return: ReturnABI[]
 }
+
+export type FieldABI = {
+    type: 'field_type'
+    name: string
+    params: ParamsABI[]
+}
+
+export type ABI = (FunctionABI | FieldABI)[]

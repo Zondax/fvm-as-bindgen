@@ -8,7 +8,7 @@ export function getStateDecodeFunc(className: string, fields: string[]) {
     result.push(`if( !raw.isArr ) throw new Error("raw state should be an array")`)
     result.push(`let state = (raw as Arr).valueOf()`)
 
-    const [extraLines, fieldsToCall] = getCborDecode(fields, 'state')
+    const [extraLines, fieldsToCall, paramsAbi] = getCborDecode(fields, 'state')
     result = result.concat(extraLines)
 
     result.push(`return new State(${fieldsToCall.join(',')})`)
