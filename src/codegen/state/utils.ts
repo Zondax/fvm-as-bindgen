@@ -1,5 +1,5 @@
-export const getConstructor = (fields: string[], inherit: boolean): string => {
-    const constructor = `constructor( __arguments__ ) {
+export const getConstructor = (fields: string[], inherit: boolean): [string, string] => {
+    let constructor = `constructor( __arguments__ ) {
         ${inherit ? 'super()' : ''}
         __body__
     }`
@@ -15,7 +15,8 @@ export const getConstructor = (fields: string[], inherit: boolean): string => {
         body += '\n' + `this.${name} = ${name}`
     })
 
-    return constructor.replace('__arguments__', args).replace('__body__', body)
+    constructor = constructor.replace('__arguments__', args).replace('__body__', body)
+    return [constructor, constructor.split('{')[0].replaceAll(' ', '')]
 }
 
 export function getDefaultValue(type: string): string {

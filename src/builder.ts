@@ -1,4 +1,12 @@
-import { Source, FunctionDeclaration, ClassDeclaration, FieldDeclaration, DecoratorNode, Statement } from 'assemblyscript'
+import {
+    Source,
+    FunctionDeclaration,
+    ClassDeclaration,
+    FieldDeclaration,
+    DecoratorNode,
+    Statement,
+    MethodDeclaration,
+} from 'assemblyscript'
 import { toString, isFunction, isClass, isField, isMethod } from './utils.js'
 import { getInvokeImports, getInvokeFunc } from './codegen/invoke/index.js'
 import { getStateEncodeFunc, getStateDecodeFunc } from './codegen/state/index.js'
@@ -168,7 +176,7 @@ export class Builder {
         const fields = _stmt.members.filter((mem) => isField(mem)).map((field) => toString(field as FieldDeclaration))
         const encodeFunc = getStateEncodeFunc(fields).join('\n')
         const decodeFunc = getStateDecodeFunc(toString(_stmt.name), fields).join('\n')
-        const constFunc = getConstructor(fields, true)
+        const [constFunc, constSignature] = getConstructor(fields, true)
         const defaultFunc = getStateStaticFuncs(toString(_stmt.name), fields)
 
         // Base func
@@ -192,7 +200,16 @@ export class Builder {
         const encodeFunc = getClassEncodeFunc(toString(stmt.name), fields).join('\n')
         const decodeFunc = getClassDecodeFunc(toString(stmt.name), fields).join('\n')
         const staticFunc = getClassStaticFuncs(toString(stmt.name), fields)
-        const constFunc = getConstructor(fields, false)
+        const [constFunc, constSignature] = getConstructor(fields, false)
+
+        stmt.members.map((_mem) => {
+            if (isMethod(_mem) && toString(_mem.name) == 'constructor')
+                throw new Error(
+                    `constructor method will be generated automatically, please remove it from class [${toString(
+                        stmt.name
+                    )}]. Its signature will be [${constSignature}]`
+                )
+        })
 
         let classStr = toString(stmt)
         classStr = classStr.slice(0, classStr.lastIndexOf('}'))
