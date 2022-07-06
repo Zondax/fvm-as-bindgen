@@ -8,7 +8,6 @@ import { getParamsDecodeLines } from './codegen/params/index.js'
 import { BASE_STATE_LOAD_FUNC, BASE_STATE_SAVE_FUNC } from './codegen/constants.js'
 import { getClassDecodeFunc, getClassEncodeFunc, getClassStaticFuncs } from './codegen/classes/index.js'
 import { getConstructor } from './codegen/state/utils.js'
-import { generateFuncAbi } from './codegen/abi/index.js'
 import {
     isBaseStateClass,
     isConstructorMethod,
