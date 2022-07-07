@@ -23,4 +23,4 @@ export type FieldABI = {
     fields: ArgumentABI[]
 }
 
-export type ABI = { functions: FunctionABI[]; types: FieldABI[] }
+export type ABI = { functions: FunctionABI[]; types: FieldABI[]; version: string }

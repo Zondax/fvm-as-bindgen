@@ -31,6 +31,7 @@ import { chainFiles } from './codegen/utils.js'
 import { isEntry, posixRelativePath, toString } from './utils.js'
 import { Builder } from './builder.js'
 import { ABI } from './codegen/abi/types.js'
+import { ABI_VERSION } from './codegen/abi/index.js'
 
 export class TransformFVM extends Transform {
     parser: Parser | undefined
@@ -38,7 +39,7 @@ export class TransformFVM extends Transform {
     afterParse(parser: Parser) {
         this.parser = parser
 
-        let abi: ABI = { functions: [], types: [] }
+        let abi: ABI = { functions: [], types: [], version: ABI_VERSION }
         const writeFile = this.writeFile
         const baseDir = this.baseDir
 
