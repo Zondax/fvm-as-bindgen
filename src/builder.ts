@@ -19,11 +19,10 @@ export class Builder {
     functionsABI: FunctionABI[] = []
     typesABI: FieldABI[] = []
 
-    build(source: Source): [ABI, string, boolean] {
+    build(source: Source): [FunctionABI[], FieldABI[], string, boolean] {
         const newSource = isEntry(source) ? this.processIndexFile(source) : this.processUserFile(source)
-        const abi = { functions: this.functionsABI, types: this.typesABI }
 
-        return [abi, newSource, isEntry(source)]
+        return [this.functionsABI, this.typesABI, newSource, isEntry(source)]
     }
 
     protected processIndexFile(source: Source): string {

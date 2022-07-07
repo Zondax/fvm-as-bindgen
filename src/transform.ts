@@ -66,11 +66,11 @@ export class TransformFVM extends Transform {
             this.program.sources = this.program.sources.filter((_source: Source) => _source !== source)
 
             // Build new Source
-            let [sourceAbi, sourceText, isChainFound] = new Builder().build(source)
+            let [funcAbi, typesAbi, sourceText, isChainFound] = new Builder().build(source)
             if (isChainFound) chainDecoratorFound = true
 
-            abi.functions = abi.functions.concat(sourceAbi.functions)
-            abi.types = abi.types.concat(sourceAbi.types)
+            abi.functions = abi.functions.concat(funcAbi)
+            abi.types = abi.types.concat(typesAbi)
 
             writeFile(source.normalizedPath + '.transformed.ts', sourceText, path.join(baseDir, 'build'))
 
