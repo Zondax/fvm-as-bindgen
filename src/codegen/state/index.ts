@@ -39,11 +39,11 @@ export const getStateStaticFuncs = (stateClassName: string, fields: string[]): s
     let args = ''
 
     fields.forEach((field) => {
-        const [name, typeAndDefault] = field.split(':')
-        const [type, defaultVal] = typeAndDefault.split('=')
+        const [name, typeAndDefault] = field.split(':').map((val) => val.trim())
+        const [type, defaultVal] = typeAndDefault.split('=').map((val) => val.trim())
 
         let val = defaultVal
-        if (val === undefined) val = getDefaultValue(type.trim())
+        if (val === undefined) val = getDefaultValue(type)
 
         args += `${val}, `
     })

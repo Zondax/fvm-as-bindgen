@@ -91,8 +91,6 @@ export class Builder {
         const paramFields = _stmt.signature.parameters.map((field) => toString(field))
         const [decodeParamsLines, paramsToCall, paramsAbi] = getParamsDecodeLines(paramFields)
 
-        this.functionsABI.push(generateFuncAbi(_stmt.name.text, paramsAbi, []))
-
         const returnTypeStr = toString(_stmt.signature.returnType)
 
         invokeCustomMethods.push(`case ${indexStr}:`)
@@ -108,11 +106,15 @@ export class Builder {
                                     ${_stmt.name.text}(${paramsToCall.join(',')})
                                 }
                             `)
+
+                this.functionsABI.push(generateFuncAbi(_stmt.name.text, paramsAbi, []))
+
                 break
             default:
                 invokeCustomMethods.push(`const result = ${funcCall}`)
                 invokeCustomMethods.push(`return create(DAG_CBOR, result)`)
 
+                const [returnFunc, returnAbi] = getReturnParser(returnCall, 'result', returnTypeStr)
                 this.sb.push(`
                                 function ${funcSignature}:Uint8Array {
                                     const decoded = decodeParamsRaw(paramsRaw(paramsID))
@@ -122,8 +124,11 @@ export class Builder {
                                     
                                     return ${returnCall}(result) 
                                 }
-                                ${getReturnParser(returnCall, 'result', returnTypeStr)}
+                                ${returnFunc}
                             `)
+
+                this.functionsABI.push(generateFuncAbi(_stmt.name.text, paramsAbi, returnAbi))
+
                 break
         }
     }
