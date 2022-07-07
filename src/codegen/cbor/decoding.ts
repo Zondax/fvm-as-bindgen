@@ -1,10 +1,10 @@
-import { ParamsABI, ParamsType } from '../abi/types.js'
+import { ArgumentABI, ParamsType } from '../abi/types.js'
 
 const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's']
 
-export function getCborDecode(fields: string[], entryFieldName: string): [string[], string[], ParamsABI[]] {
+export function getCborDecode(fields: string[], entryFieldName: string): [string[], string[], ArgumentABI[]] {
     const result: string[] = []
-    const paramsAbi: ParamsABI[] = []
+    const paramsAbi: ArgumentABI[] = []
 
     const fieldsToCall: string[] = []
     fields.forEach((field, index) => {

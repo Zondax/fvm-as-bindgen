@@ -1,7 +1,7 @@
 import { getCborDecode } from '../cbor/decoding.js'
-import { ParamsABI } from '../abi/types.js'
+import { ArgumentABI } from '../abi/types.js'
 
-export function getParamsDecodeLines(fields: string[]): [string[], string[], ParamsABI[]] {
+export function getParamsDecodeLines(fields: string[]): [string[], string[], ArgumentABI[]] {
     let result: string[] = []
 
     result.push(`if( !decoded.isArr ) throw new Error("params rcv should be encoded in a CBOR array")`)

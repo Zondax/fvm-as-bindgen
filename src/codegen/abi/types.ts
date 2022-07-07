@@ -5,7 +5,7 @@ export type ReturnABI = {
     type: ParamsType
 }
 
-export type ParamsABI = {
+export type ArgumentABI = {
     name: string
     type: ParamsType
     defaultValue: string
@@ -14,14 +14,14 @@ export type ParamsABI = {
 export type FunctionABI = {
     type: 'function'
     name: string
-    params: ParamsABI[]
+    args: ArgumentABI[]
     return: ReturnABI[]
 }
 
 export type FieldABI = {
-    type: 'field_type'
+    type: 'object'
     name: string
-    params: ParamsABI[]
+    fields: ArgumentABI[]
 }
 
-export type ABI = (FunctionABI | FieldABI)[]
+export type ABI = { functions: FunctionABI[]; types: FieldABI[] }

@@ -38,7 +38,7 @@ export class TransformFVM extends Transform {
     afterParse(parser: Parser) {
         this.parser = parser
 
-        let abi: ABI = []
+        let abi: ABI = { functions: [], types: [] }
         const writeFile = this.writeFile
         const baseDir = this.baseDir
 
@@ -67,7 +67,9 @@ export class TransformFVM extends Transform {
             // Build new Source
             let [sourceAbi, sourceText, isChainFound] = new Builder().build(source)
             if (isChainFound) chainDecoratorFound = true
-            abi = abi.concat(sourceAbi)
+
+            abi.functions = abi.functions.concat(sourceAbi.functions)
+            abi.types = abi.types.concat(sourceAbi.types)
 
             writeFile(source.normalizedPath + '.transformed.ts', sourceText, path.join(baseDir, 'build'))
 

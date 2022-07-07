@@ -10,22 +10,20 @@ import { getConstructor } from './codegen/state/utils.js'
 import { isBaseStateClass, isConstructorMethod, isExportMethod, isStateClass } from './codegen/utils.js'
 import { getCborImports } from './codegen/cbor/imports.js'
 import { generateFieldAbi, generateFuncAbi } from './codegen/abi/index.js'
-import { ABI } from './codegen/abi/types.js'
+import { ABI, FunctionABI, FieldABI } from './codegen/abi/types.js'
 
 type IndexesUsed = { [key: string]: boolean }
 
 export class Builder {
-    sb: string[]
-    abi: ABI
-
-    constructor() {
-        this.sb = []
-        this.abi = []
-    }
+    sb: string[] = []
+    functionsABI: FunctionABI[] = []
+    typesABI: FieldABI[] = []
 
     build(source: Source): [ABI, string, boolean] {
         const newSource = isEntry(source) ? this.processIndexFile(source) : this.processUserFile(source)
-        return [this.abi, newSource, isEntry(source)]
+        const abi = { functions: this.functionsABI, types: this.typesABI }
+
+        return [abi, newSource, isEntry(source)]
     }
 
     protected processIndexFile(source: Source): string {
@@ -93,7 +91,7 @@ export class Builder {
         const paramFields = _stmt.signature.parameters.map((field) => toString(field))
         const [decodeParamsLines, paramsToCall, paramsAbi] = getParamsDecodeLines(paramFields)
 
-        this.abi.push(generateFuncAbi(_stmt.name.text, paramsAbi, []))
+        this.functionsABI.push(generateFuncAbi(_stmt.name.text, paramsAbi, []))
 
         const returnTypeStr = toString(_stmt.signature.returnType)
 
@@ -190,7 +188,7 @@ export class Builder {
         const cborImports = getCborImports(toString(stmt.name))
         if (!this.sb.includes(cborImports)) this.sb.push(cborImports)
 
-        this.abi.push(generateFieldAbi(stmt.name.text, paramsAbi))
+        this.typesABI.push(generateFieldAbi(stmt.name.text, paramsAbi))
 
         stmt.members.map((_mem) => {
             if (isMethod(_mem) && toString(_mem.name) == 'constructor')

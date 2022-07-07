@@ -1,7 +1,7 @@
 import { encodeFields } from '../cbor/encoding.js'
 import { getCborDecode } from '../cbor/decoding.js'
 import { getDefaultValue } from '../state/utils.js'
-import { ParamsABI } from '../abi/types.js'
+import { ArgumentABI } from '../abi/types.js'
 
 export function getClassEncodeFunc(className: string, fields: string[]) {
     let result: string[] = []
@@ -12,7 +12,7 @@ export function getClassEncodeFunc(className: string, fields: string[]) {
     return result
 }
 
-export function getClassDecodeFunc(className: string, fields: string[]): [string[], string[], ParamsABI[]] {
+export function getClassDecodeFunc(className: string, fields: string[]): [string[], string[], ArgumentABI[]] {
     let result: string[] = []
     result.push(`static parse(parsedData: Value): ${className} {`)
     result.push(`if( !parsedData.isArr ) throw new Error("serialized data on ${className} should be an array")`)
