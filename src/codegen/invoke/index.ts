@@ -10,7 +10,7 @@ export function getInvokeImports(enableLogs: boolean): string {
     `
 }
 
-export function getInvokeFunc(): string {
+export function getInvokeFunc(enableLogs: boolean): string {
     const baseFunc = `
         export function invoke(paramsID: u32): u32 {
     
@@ -24,7 +24,14 @@ export function getInvokeFunc(): string {
               // Nobody else should call the constructor
               if( !isConstructorCaller() ) return NO_DATA_BLOCK_ID
               
-              const decoded = decodeParamsRaw(paramsRaw(paramsID))
+              const rawData = paramsRaw(paramsID)
+              ${
+                  enableLogs
+                      ? `const rawDataStr = Uint8Array.wrap(rawData.raw.buffer).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '')
+                        log("Rcv params (hex) --> " + rawDataStr)`
+                      : ''
+              }
+              const decoded = decodeParamsRaw(rawData)
               
               // Call constructor func.
               __constructor-func__

@@ -31,7 +31,7 @@ export class Builder {
     }
 
     protected processIndexFile(source: Source): string {
-        this.sb.push(getInvokeFunc())
+        this.sb.push(getInvokeFunc(this.enableLog))
         this.sb.push(getInvokeImports(this.enableLog))
 
         let invokeCustomMethods: string[] = []
@@ -105,7 +105,14 @@ export class Builder {
 
                 this.sb.push(`
                                 function ${funcSignature}:void {
-                                    const decoded = decodeParamsRaw(paramsRaw(paramsID))
+                                    const rawData = paramsRaw(paramsID)
+                                    ${
+                                        this.enableLog
+                                            ? `const rawDataStr = Uint8Array.wrap(rawData.raw.buffer).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '')
+                                            log("Rcv params (hex) --> " + rawDataStr)`
+                                            : ''
+                                    }
+                                    const decoded = decodeParamsRaw(rawData)
                                     ${decodeParamsLines.join('\n')}
                                     ${_stmt.name.text}(${paramsToCall.join(',')})
                                 }
@@ -121,7 +128,15 @@ export class Builder {
                 const [returnFunc, returnAbi] = getReturnParser(returnCall, 'result', returnTypeStr)
                 this.sb.push(`
                                 function ${funcSignature}:Uint8Array {
-                                    const decoded = decodeParamsRaw(paramsRaw(paramsID))
+                                    const rawData = paramsRaw(paramsID)
+                                    
+                                    ${
+                                        this.enableLog
+                                            ? `const rawDataStr = Uint8Array.wrap(rawData.raw.buffer).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '')
+                                            log("Rcv params (hex) --> " + rawDataStr)`
+                                            : ''
+                                    }
+                                    const decoded = decodeParamsRaw(rawData)
                                     ${decodeParamsLines.join('\n')}
                                     
                                     const result = ${_stmt.name.text}(${paramsToCall.join(',')})
