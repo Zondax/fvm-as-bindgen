@@ -3,7 +3,7 @@ import { toString, isFunction, isClass, isField, isMethod, isEntry } from './uti
 import { getInvokeImports, getInvokeFunc } from './codegen/invoke/index.js'
 import { getStateEncodeFunc, getStateDecodeFunc, getStateStaticFuncs } from './codegen/state/index.js'
 import { getReturnParser } from './codegen/return/index.js'
-import { getParamsDecodeLines } from './codegen/params/index.js'
+import { getParamsDecodeLines, getParamsParseLine } from './codegen/params/index.js'
 import { BASE_STATE_LOAD_FUNC, BASE_STATE_SAVE_FUNC } from './codegen/constants.js'
 import { getClassDecodeFunc, getClassEncodeFunc, getClassStaticFuncs } from './codegen/classes/index.js'
 import { getConstructor } from './codegen/state/utils.js'
@@ -93,6 +93,7 @@ export class Builder {
         const returnCall = `__encodeReturn_${_stmt.name.text}`
 
         const paramFields = _stmt.signature.parameters.map((field) => toString(field))
+        const parseParamsLines = getParamsParseLine(this.enableLog)
         const [decodeParamsLines, paramsToCall, paramsAbi] = getParamsDecodeLines(paramFields, this.enableLog)
 
         const returnTypeStr = toString(_stmt.signature.returnType)
@@ -105,14 +106,7 @@ export class Builder {
 
                 this.sb.push(`
                                 function ${funcSignature}:void {
-                                    const rawData = paramsRaw(paramsID)
-                                    ${
-                                        this.enableLog
-                                            ? `const rawDataStr = Uint8Array.wrap(rawData.raw.buffer).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '')
-                                            log("Rcv params (hex) --> " + rawDataStr)`
-                                            : ''
-                                    }
-                                    const decoded = decodeParamsRaw(rawData)
+                                    ${parseParamsLines}
                                     ${decodeParamsLines.join('\n')}
                                     ${_stmt.name.text}(${paramsToCall.join(',')})
                                 }
@@ -128,19 +122,10 @@ export class Builder {
                 const [returnFunc, returnAbi] = getReturnParser(returnCall, 'result', returnTypeStr)
                 this.sb.push(`
                                 function ${funcSignature}:Uint8Array {
-                                    const rawData = paramsRaw(paramsID)
-                                    
-                                    ${
-                                        this.enableLog
-                                            ? `const rawDataStr = Uint8Array.wrap(rawData.raw.buffer).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '')
-                                            log("Rcv params (hex) --> " + rawDataStr)`
-                                            : ''
-                                    }
-                                    const decoded = decodeParamsRaw(rawData)
+                                    ${parseParamsLines}
                                     ${decodeParamsLines.join('\n')}
                                     
                                     const result = ${_stmt.name.text}(${paramsToCall.join(',')})
-                                    
                                     return ${returnCall}(result) 
                                 }
                                 ${returnFunc}

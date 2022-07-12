@@ -14,3 +14,14 @@ export function getParamsDecodeLines(fields: string[], enableLogs: boolean): [st
 
     return [result, fieldsToCall, paramsAbi]
 }
+
+export function getParamsParseLine(enableLog: boolean) {
+    return `const rawData = paramsRaw(paramsID)
+    ${
+        enableLog
+            ? `const rawDataStr = Uint8Array.wrap(rawData.raw.buffer).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '')
+            log("Rcv params (hex) --> " + rawDataStr)`
+            : ''
+    }
+    const decoded = decodeParamsRaw(rawData)`
+}
