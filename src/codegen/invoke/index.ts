@@ -1,3 +1,5 @@
+import { getParamsParseLine } from '../params/index.js'
+
 export function getInvokeImports(enableLogs: boolean): string {
     return `
         import {CBOREncoder} from "@zondax/assemblyscript-cbor/assembly";
@@ -24,14 +26,7 @@ export function getInvokeFunc(enableLogs: boolean): string {
               // Nobody else should call the constructor
               if( !isConstructorCaller() ) return NO_DATA_BLOCK_ID
               
-              const rawData = paramsRaw(paramsID)
-              ${
-                  enableLogs
-                      ? `const rawDataStr = Uint8Array.wrap(rawData.raw.buffer).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '')
-                        log("Rcv params (hex) --> " + rawDataStr)`
-                      : ''
-              }
-              const decoded = decodeParamsRaw(rawData)
+              ${getParamsParseLine(enableLogs)}
               
               // Call constructor func.
               __constructor-func__
