@@ -19,6 +19,8 @@ export function getInvokeFunc(enableLogs: boolean): string {
           // Read invoked method number
           const methodNum = u32(methodNumber())
         
+          ${enableLogs ? 'log("Method number called: [" + methodNum.toString() + "]")' : ''}
+        
           switch (methodNum) {
             // Method number 1 is fixe for create actor command
             case 1:
