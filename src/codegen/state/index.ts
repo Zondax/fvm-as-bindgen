@@ -27,13 +27,21 @@ export function getStateEncodeFunc(fields: string[]) {
     return result
 }
 
-export const getStateStaticFuncs = (stateClassName: string, fields: string[]): string => {
+export const getStateStaticFuncs = (stateClassName: string, fields: string[], enableLogs: boolean): string => {
     const func = `static defaultState(): ${stateClassName} {
         return new ${stateClassName}( __params__ );
       }
       
       static load(): ${stateClassName} {
-        return State.defaultState().load() as ${stateClassName};
+        const state = State.defaultState().load() as ${stateClassName};
+        ${
+            enableLogs
+                ? `
+        const stateToLog = new CBORDecoder( state.encode() ).parse().toString()
+        log("Current state: [" + stateToLog + "]")`
+                : ''
+        }
+        return state;
       }`
 
     let args = ''
