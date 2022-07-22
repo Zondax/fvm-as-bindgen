@@ -90,7 +90,7 @@ export class Builder {
 
         const funcCall = `__wrapper_${_stmt.name.text}(paramsID)`
         const funcSignature = `__wrapper_${_stmt.name.text}(paramsID: u32)`
-        const returnCall = `__encodeReturn_${_stmt.name.text}`
+        const returnCallName = `__encodeReturn_${_stmt.name.text}`
 
         const paramFields = _stmt.signature.parameters.map((field) => toString(field))
         const parseParamsLines = getParamsParseLine(this.enableLog)
@@ -119,14 +119,14 @@ export class Builder {
                 invokeCustomMethods.push(`const result = ${funcCall}`)
                 invokeCustomMethods.push(`return create(DAG_CBOR, result)`)
 
-                const [returnFunc, returnAbi] = getReturnParser(returnCall, 'result', returnTypeStr)
+                const [returnFunc, returnAbi] = getReturnParser(returnCallName, 'result', returnTypeStr, this.enableLog)
                 this.sb.push(`
                                 function ${funcSignature}:Uint8Array {
                                     ${parseParamsLines}
                                     ${decodeParamsLines.join('\n')}
                                     
                                     const result = ${_stmt.name.text}(${paramsToCall.join(',')})
-                                    return ${returnCall}(result) 
+                                    return ${returnCallName}(result) 
                                 }
                                 ${returnFunc}
                             `)
@@ -170,7 +170,7 @@ export class Builder {
         const encodeFunc = getStateEncodeFunc(fields).join('\n')
         const decodeFunc = getStateDecodeFunc(toString(_stmt.name), fields).join('\n')
         const [constFunc, constSignature] = getConstructor(fields, true)
-        const defaultFunc = getStateStaticFuncs(toString(_stmt.name), fields)
+        const defaultFunc = getStateStaticFuncs(toString(_stmt.name), fields, this.enableLog)
 
         const cborImports = getCborImports(toString(_stmt.name), this.enableLog)
         if (!this.sb.includes(cborImports)) this.sb.push(cborImports)
