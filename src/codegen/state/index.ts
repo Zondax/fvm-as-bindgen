@@ -33,7 +33,7 @@ export function getStateEncodeFunc(fields: string[], enableLogs: boolean) {
         result.push('const stateToLog = new CBORDecoder( data ).parse().toString()')
         result.push('log("Encoded state (obj): [" + stateToLog + "]")')
         result.push(
-            'log("Encoded state (hex): [" + "Uint8Array.wrap(data).reduce((str, byte) => str + byte.toString(16).padStart(2, \'0\'), \'\')" + "]")'
+            'log("Encoded state (hex): [" + Uint8Array.wrap(data).reduce((str, byte) => str + byte.toString(16).padStart(2, \'0\'), \'\') + "]")'
         )
     }
 
