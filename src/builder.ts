@@ -167,8 +167,8 @@ export class Builder {
         let _stmt = stmt as ClassDeclaration
         // Encode func
         const fields = _stmt.members.filter((mem) => isField(mem)).map((field) => toString(field as FieldDeclaration))
-        const encodeFunc = getStateEncodeFunc(fields).join('\n')
-        const decodeFunc = getStateDecodeFunc(toString(_stmt.name), fields).join('\n')
+        const encodeFunc = getStateEncodeFunc(fields, this.enableLog).join('\n')
+        const decodeFunc = getStateDecodeFunc(toString(_stmt.name), fields, this.enableLog).join('\n')
         const [constFunc, constSignature] = getConstructor(fields, true)
         const defaultFunc = getStateStaticFuncs(toString(_stmt.name), fields, this.enableLog)
 
