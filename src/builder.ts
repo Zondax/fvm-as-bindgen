@@ -39,6 +39,7 @@ export class Builder {
     }
 
     protected processIndexFile(source: Source): string {
+        let constructorFound = false
 
         this.sb.push(getInvokeFunc(this.enableLog))
         this.sb.push(getInvokeImports(this.enableLog))
@@ -55,10 +56,18 @@ export class Builder {
             const exportMethodDecorator = isExportMethod(_stmt)
             if (exportMethodDecorator) this.handleExportMethod(_stmt, exportMethodDecorator, indexesUsed, invokeCustomMethods)
 
-            if (isConstructorMethod(_stmt)) this.handleConstructor(_stmt)
+            if (isConstructorMethod(_stmt)) {
+                constructorFound = true
+                this.handleConstructor(_stmt)
+            }
 
             return toString(stmt)
         })
+
+        if (!constructorFound) {
+            this.functionsABI.push(generateFuncAbi('constructor', parseInt('1'), [], []))
+            this.sb[0] = this.sb[0].replace('__constructor-func__', '')
+        }
 
         this.sb[0] = this.sb[0].replace('__user-methods__', invokeCustomMethods.join('\n'))
 
