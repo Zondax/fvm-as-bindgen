@@ -39,6 +39,7 @@ export class Builder {
     }
 
     protected processIndexFile(source: Source): string {
+
         this.sb.push(getInvokeFunc(this.enableLog))
         this.sb.push(getInvokeImports(this.enableLog))
 
@@ -147,11 +148,13 @@ export class Builder {
 
     protected handleConstructor(_stmt: FunctionDeclaration) {
         const paramFields = _stmt.signature.parameters.map((field) => toString(field))
-        const [decodeParamsLines, paramsToCall] = getParamsDecodeLines(paramFields, this.enableLog)
+        const [decodeParamsLines, paramsToCall, paramsAbi] = getParamsDecodeLines(paramFields, this.enableLog)
         const newLines = `
                         ${decodeParamsLines.join('\n')}
                         ${_stmt.name.text}(${paramsToCall.join(',')})
                     `
+
+        this.functionsABI.push(generateFuncAbi(_stmt.name.text, parseInt('1'), paramsAbi, []))
 
         this.sb[0] = this.sb[0].replace('__constructor-func__', newLines)
     }
