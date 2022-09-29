@@ -32,5 +32,6 @@ export class State extends BaseState {
     table_nested_3: Array<Array<Array<u64>>>
     table_nested_4: Array<Array<Array<Array<u64>>>>
     table_nested_5: Array<Array<Array<Array<string>>>>
-    players: Map<string, boolean>
+    players_nested_1: Map<string, boolean>
+    players_nested_2: Map<string, Map<string, boolean>>
 }

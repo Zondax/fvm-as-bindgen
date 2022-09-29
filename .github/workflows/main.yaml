@@ -16,11 +16,12 @@ jobs:
       - name: Install yarn
         run: npm install -g yarn
       - name: Install dependencies
-        run: yarn install && cd tests && yarn install
+        run: yarn install
       - name: Build package
         run: |
           yarn build
           ls -la ./dist
+      - name: Install test dependencies
+        run: cd tests && yarn install
       - name: Run tests
-        run: |
-          yarn test
+        run: yarn test
