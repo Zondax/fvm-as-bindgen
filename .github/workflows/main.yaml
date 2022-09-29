@@ -26,6 +26,6 @@ jobs:
       - name: Publish actual package locally
         run: yalc publish
       - name: Install test dependencies
-        run: cd tests && yarn install
+        run: cd tests && yalc add @zondax/fvm-as-bindgen@0.0.0 && yarn install
       - name: Run tests
         run: yarn test
