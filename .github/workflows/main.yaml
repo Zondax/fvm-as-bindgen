@@ -1,9 +1,9 @@
-name: Build
+name: Checks
 on:
   - push
 
 jobs:
-  build:
+  checks:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -16,8 +16,11 @@ jobs:
       - name: Install yarn
         run: npm install -g yarn
       - name: Install dependencies
-        run: yarn install
+        run: yarn install && cd tests && yarn install
       - name: Build package
         run: |
           yarn build
           ls -la ./dist
+      - name: Run tests
+        run: |
+          yarn test

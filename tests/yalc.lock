@@ -1,0 +1,11 @@
+{
+  "version": "v1",
+  "packages": {
+    "@zondax/fvm-as-bindgen": {
+      "version": "0.0.0",
+      "signature": "93b3f67510ca3605ed01ba60d830d36e",
+      "file": true,
+      "replaced": "../dist"
+    }
+  }
+}

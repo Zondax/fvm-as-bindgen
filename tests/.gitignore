@@ -1,0 +1,10 @@
+node_modules
+build
+
+.idea
+.DS_Store
+
+.env
+
+yarn.lock
+.yalc

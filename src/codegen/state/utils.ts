@@ -42,15 +42,7 @@ export function getDefaultValue(type: string): string {
             return 'false'
 
         default:
-            if (type.startsWith('Array')) {
-                const arrayType = type.split('<')[1].split('>')[0]
-                return `new Array<${arrayType}>()`
-            }
-
-            if (type.startsWith('Map')) {
-                const [keyType, valueType] = type.split('<')[1].split('>')[0].split(',')
-                return `new Map<${keyType}, ${valueType}>()`
-            }
+            if (type.startsWith('Array') || type.startsWith('Map')) return `new ${type}()`
 
             return `${type}.defaultInstance()`
 
