@@ -20,17 +20,17 @@ function play(): void {
     // @ts-ignore
     const state = State.load() as State;
 
-    if(state.players.keys().length > 2){
+    if(state.players_nested_1.keys().length > 2){
         wrappers.genericAbort(100, "the game is full")
         return
     }
 
-    if(state.players.has(wrappers.caller().toString())){
+    if(state.players_nested_1.has(wrappers.caller().toString())){
         wrappers.genericAbort(101, "you already are part of the game")
         return
     }
 
-    state.players.set(wrappers.caller().toString(), true)
+    state.players_nested_1.set(wrappers.caller().toString(), true)
     state.save()
 }
 
@@ -40,12 +40,12 @@ function move(x:u8, y:u8): void {
     const state = State.load() as State;
 
 
-    if( !state.players.has(wrappers.caller().toString())){
+    if( !state.players_nested_1.has(wrappers.caller().toString())){
         wrappers.genericAbort(101, "you are not part of the game")
         return
     }
 
-    if( state.players.keys().length != 2){
+    if( state.players_nested_1.keys().length != 2){
         wrappers.genericAbort(101, "the players are not ready")
         return
     }
@@ -55,18 +55,3 @@ function move(x:u8, y:u8): void {
         return
     }
 }
-
-/*
-
-// User function. Smart-contract-related function.
-// @ts-ignore
-@export_method(3)
-function example_method(counter:u64, message: string, values: Array<u64>): string {}
-
-
-// User function. Smart-contract-related function.
-// @ts-ignore
-@export_method(4)
-function example_method(data: Map<string, u32>): string {}
-
-*/
