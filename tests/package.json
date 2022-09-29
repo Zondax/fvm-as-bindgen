@@ -1,0 +1,39 @@
+{
+  "name": "fil-boilerplate-actor-as",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "asbuild": "asc assembly/index.ts --target release --use abort= --transform  @zondax/fvm-as-bindgen",
+    "tests:rpc": "jest --runInBand"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zondax/fil-boilerplate-actor-as.git"
+  },
+  "author": "Zondax AG",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Zondax/fil-boilerplate-actor-as/issues"
+  },
+  "homepage": "https://github.com/Zondax/fil-boilerplate-actor-as#readme",
+  "dependencies": {
+    "@zondax/assemblyscript-cbor": "^1.0.0",
+    "@zondax/fvm-as-bindgen": "file:.yalc/@zondax/fvm-as-bindgen",
+    "@zondax/fvm-as-sdk": "^1.0.0",
+    "assemblyscript": "^0.20.11"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@ipld/dag-cbor": "^7.0.2",
+    "@types/jest": "^28.1.2",
+    "@zondax/filecoin-signing-tools": "^1.0.4",
+    "@zondax/fvm-client-tool": "^1.0.2",
+    "dotenv": "^16.0.1",
+    "jest": "^28.1.1",
+    "log4js": "^6.5.2",
+    "ts-jest": "^28.0.5",
+    "ts-node": "^10.8.1",
+    "typescript": "^4.7.4"
+  }
+}

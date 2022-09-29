@@ -1,4 +1,6 @@
-const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k']
+import { getNewIndexLetter } from './utils.js'
+
+const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's']
 
 export function getCborEncode(fields: string[], parentName: string): string[] {
     const result: string[] = []
@@ -14,6 +16,7 @@ export function encodeFields(fields: string[], parentName: string) {
     fields.forEach((field) => {
         const [name, typeAndDefault] = field.split(':')
         const [type, defaultVal] = typeAndDefault.split('=')
+
         encodeField(result, type.trim(), name.trim(), parentName, '', '')
     })
 
@@ -77,21 +80,29 @@ export function encodeField(result: string[], type: string, fieldName: string, p
 
         default:
             if (type.startsWith('Array')) {
-                const arrayType = type.split('<')[1].split('>')[0]
+                const searchResult = new RegExp(/<.*>/).exec(type)
+                if (!searchResult) throw new Error(`type ${type} is not well formatted to be an array`)
 
-                result.push(`encoder.addArray(${fieldAccessor}.length)`)
+                const parentType = searchResult[0].toString()
+                const arrayType = parentType.substring(1, parentType.length - 1)
+
+                result.push(`encoder.addArray(${fieldAccessor}${index}.length)`)
                 let newIndex = getNewIndexLetter(result)
-                result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldAccessor}.length; ${newIndex}++){`)
-                encodeField(result, arrayType, fieldName, parentName, 'array', newIndex)
+                result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldAccessor}${index}.length; ${newIndex}++){`)
+                encodeField(result, arrayType, `${fieldName}[${newIndex}]`, parentName, '', '')
                 result.push(`}`)
                 return
             }
 
             if (type.startsWith('Map')) {
-                const [keyType, valueType] = type.split('<')[1].split('>')[0].split(',')
+                const searchResult = new RegExp(/<.*>/).exec(type)
+                if (!searchResult) throw new Error(`type ${type} is not well formatted to be a map`)
+
+                const parentType = searchResult[0].toString()
+                const [keyType, valueType] = parentType.substring(1, parentType.length - 1).split(',', 2)
 
                 let newIndex = getNewIndexLetter(result)
-                result.push(`let keys_${newIndex} = ${fieldAccessor}.keys()`)
+                result.push(`let keys_${newIndex} = ${fieldAccessor}${index}.keys()`)
 
                 result.push(`encoder.addObject(keys_${newIndex}.length)`)
 
@@ -107,20 +118,4 @@ export function encodeField(result: string[], type: string, fieldName: string, p
 
             throw new Error(`type [${type}] is not supported for encoding`)
     }
-}
-
-export function getNewIndexLetter(result: string[]) {
-    let isUsed = true,
-        i = 0,
-        newLetter = letters[i]
-
-    isUsed = result.some((line) => line.includes(`let ${newLetter}`))
-    while (isUsed && i != letters.length) {
-        i++
-        newLetter = letters[i]
-        isUsed = result.some((line) => line.includes(`let ${newLetter}`))
-    }
-
-    if (i == letters.length) throw new Error('no more indexes to use')
-    return newLetter
 }

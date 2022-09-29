@@ -1,4 +1,5 @@
 import { ArgumentABI, ParamsType } from '../abi/types.js'
+import { getNewIndexLetter } from './utils.js'
 
 const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's']
 
@@ -11,7 +12,7 @@ export function getCborDecode(fields: string[], entryFieldName: string): [string
         const [name, typeAndDefault] = field.split(':').map((val) => val.trim())
         const [type, defaultValue] = typeAndDefault.split('=').map((val) => val.trim())
 
-        decodeTypes(result, 'array', entryFieldName, name, type, index.toString())
+        decodeTypes(result, 'array', entryFieldName, name, type, index.toString(), false)
 
         fieldsToCall.push(name)
         paramsAbi.push({ name, type: type as ParamsType, defaultValue })
@@ -26,31 +27,32 @@ export function decodeTypes(
     parentName: string,
     fieldName: string,
     fieldType: string,
-    rootIndex: string
+    rootIndex: string,
+    isFieldReference: boolean
 ) {
-    const translated = translateBasicTypes(parentName, parentType, rootIndex, fieldType, false)
-    if (translated != '') {
-        result.push(`let ${fieldName} = ${translated}`)
+    const [parseVarLine, decodeRecursively] = translateBasicTypes(parentName, parentType, rootIndex, fieldType, isFieldReference)
+    if (parseVarLine != '' && !decodeRecursively) {
+        result.push(`let ${fieldName} = ${parseVarLine}`)
         return
     }
 
     if (fieldType.startsWith('Array')) {
-        const elementType = fieldType.split('<')[1].split('>')[0]
+        const searchResult = new RegExp(/<.*>/).exec(fieldType)
+        if (!searchResult) throw new Error(`type ${fieldType} is not well formatted to be an array`)
+
+        const aux = searchResult[0].toString()
+        const elementType = aux.substring(1, aux.length - 1)
 
         let accessor = getAccessor(parentName, parentType, rootIndex || fieldName, false)
         result.push(`let ${fieldName}_raw = (${accessor} as Arr).valueOf()`)
         result.push(`let ${fieldName} = new Array<${elementType}>()`)
 
-        let newIndex = getNewIndexLetter(result, fieldName)
+        let newIndex = getNewIndexLetter(result)
         result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldName}_raw.length; ${newIndex}++){`)
 
-        let tmp = translateBasicTypes(`${fieldName}_raw`, 'array', newIndex, elementType, true)
-        if (tmp == '') {
-            let accessor = getAccessor(`${fieldName}_raw`, 'array', newIndex, true)
-            tmp = `${elementType}.parse(${accessor})`
-        }
+        decodeTypes(result, 'array', `${fieldName}_raw`, `${fieldName}_raw_${newIndex}`, elementType, newIndex, true)
 
-        result.push(`${fieldName}.push(${tmp})`)
+        result.push(`${fieldName}.push(${fieldName}_raw_${newIndex})`)
         result.push(`}`)
         return
     }
@@ -65,17 +67,18 @@ export function decodeTypes(
         result.push(`let ${fieldName}_keys =  ${fieldName}_raw.keys()`)
         result.push(`let ${fieldName} = new Map<${keyType}, ${valueType}>()`)
 
-        let newIndex = getNewIndexLetter(result, fieldName)
+        let newIndex = getNewIndexLetter(result)
         result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldName}_keys.length; ${newIndex}++){`)
-        result.push(`let key = ${fieldName}_keys.at(${newIndex}).toString()`)
+        result.push(`let key = ${fieldName}_keys.at(${newIndex})`)
+        result.push(`let parsed_key = ${castType('string', keyType, 'key')}`)
 
-        let tmp = translateBasicTypes(`${fieldName}_raw`, 'object', 'key', valueType, true)
+        let [tmp] = translateBasicTypes(`${fieldName}_raw`, 'map', 'key', valueType, true)
         if (tmp == '') {
-            let accessor = getAccessor(`${fieldName}_raw`, 'object', 'key', true)
+            let accessor = getAccessor(`${fieldName}_raw`, 'map', 'key', true)
             tmp = `${valueType}.parse(${accessor})`
         }
 
-        result.push(`${fieldName}.set(key, ${tmp})`)
+        result.push(`${fieldName}.set(parsed_key, ${tmp})`)
         result.push(`}`)
         return
     }
@@ -86,23 +89,13 @@ export function decodeTypes(
     //throw new Error(`type [${fieldType}] is not supported for decoding`)
 }
 
-function getNewIndexLetter(result: string[], currentLetter: string) {
-    if (currentLetter == '') return letters[0]
-
-    let isUsed = true,
-        i = 0,
-        newLetter = ''
-    while (isUsed && i != letters.length) {
-        i++
-        newLetter = letters[i]
-        isUsed = result.some((line) => line.includes(`let ${newLetter}`))
-    }
-
-    if (i == letters.length) throw new Error('no more indexes to use')
-    return newLetter
-}
-
-function translateBasicTypes(parentName: string, parentType: string, fieldName: string, fieldType: string, isFieldReference: boolean) {
+function translateBasicTypes(
+    parentName: string,
+    parentType: string,
+    fieldName: string,
+    fieldType: string,
+    isFieldReference: boolean
+): [string, boolean] {
     let accessor = getAccessor(parentName, parentType, fieldName, isFieldReference)
 
     switch (fieldType) {
@@ -114,32 +107,35 @@ function translateBasicTypes(parentName: string, parentType: string, fieldName: 
         case 'i32':
         case 'i16':
         case 'i8':
-            return `${fieldType}((${accessor} as Integer).valueOf())`
+            return [`${fieldType}((${accessor} as Integer).valueOf())`, false]
 
         case 'f64':
         case 'f32':
-            return `${fieldType}((${accessor} as Float).valueOf())`
+            return [`${fieldType}((${accessor} as Float).valueOf())`, false]
 
         case 'string':
-            return `(${accessor} as Str).valueOf()`
+            return [`(${accessor} as Str).valueOf()`, false]
 
         case 'boolean':
-            return `(${accessor} as Boolean).valueOf()`
+            return [`(${accessor} as Bool).valueOf()`, false]
 
         case 'null':
-            return `(${accessor} as Null).valueOf()`
+            return [`(${accessor} as Null).valueOf()`, false]
 
         case 'Uint8Array':
-            return `(${accessor} as Bytes).valueOf()`
-
-        default:
-            return ''
+            return [`(${accessor} as Bytes).valueOf()`, false]
     }
+
+    if (fieldType.startsWith('Array')) return [`(${accessor} as Arr).valueOf()`, true]
+
+    if (fieldType.startsWith('Map')) return [`(${accessor} as Obj).valueOf()`, true]
+
+    return ['', false]
 }
 
 function getAccessor(parentName: string, parentType: string, fieldName: string, isFieldReference: boolean) {
-    switch (parentType) {
-        case 'object':
+    switch (parentType.toLowerCase()) {
+        case 'map':
             if (isFieldReference) return `${parentName}.get(${fieldName})`
             return `${parentName}.get("${fieldName}")`
 
@@ -149,4 +145,23 @@ function getAccessor(parentName: string, parentType: string, fieldName: string, 
         default:
             return ''
     }
+}
+
+function castType(sourceType: string, destinationType: string, variableName: string) {
+    sourceType = sourceType.toLowerCase().trim()
+    destinationType = destinationType.trim()
+
+    if (sourceType == 'string') {
+        if (destinationType.startsWith('u') || destinationType.startsWith('i'))
+            return `${destinationType}(Number.parseInt(${variableName}, 10))`
+        if (destinationType.startsWith('float')) return `${destinationType}(Number.parseFloat(${variableName}, 10))`
+        if (destinationType == 'string') return variableName
+    }
+
+    if (sourceType.startsWith('u') || sourceType.startsWith('i') || sourceType.startsWith('float')) {
+        if (destinationType == 'string') return `${variableName}.toString()`
+        if (destinationType.startsWith('u') || destinationType.startsWith('i') || destinationType.startsWith('float')) return variableName
+    }
+
+    throw new Error(`parse ${sourceType} to ${destinationType} not implemented`)
 }

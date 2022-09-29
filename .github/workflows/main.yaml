@@ -1,9 +1,9 @@
-name: Build
+name: Checks
 on:
   - push
 
 jobs:
-  build:
+  checks:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -15,9 +15,17 @@ jobs:
           node-version: '16.13.0'
       - name: Install yarn
         run: npm install -g yarn
+      - name: Install yalc
+        run: npm install -g yalc
       - name: Install dependencies
         run: yarn install
       - name: Build package
         run: |
           yarn build
           ls -la ./dist
+      - name: Publish actual package locally
+        run: yalc publish
+      - name: Install test dependencies
+        run: cd tests && yalc add @zondax/fvm-as-bindgen@0.0.0 && yarn install
+      - name: Run tests
+        run: yarn test
