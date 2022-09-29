@@ -17,7 +17,7 @@
     "build:fix_transform": "find dist/. -type f -maxdepth 1 -name '*.*' -exec sed -i \"s/'assemblyscript\\/asc'/'assemblyscript\\/transform'/\" {} +",
     "build:fix_transform:macos": "find dist/. -type f -maxdepth 1 -name '*.*' -exec sed -i '' \"s/'assemblyscript\\/asc'/'assemblyscript\\/transform'/\" {} +",
     "postbuild": "yarn build:fix_transform",
-    "test": "yarn build && yalc publish && cd tests && yalc add @zondax/fvm-as-bindgen@0.0.0 && make build"
+    "test": "yarn build && yalc publish && cd tests && yalc add @zondax/fvm-as-bindgen@0.0.0 && yarn asbuild"
   },
   "author": "Zondax AG",
   "license": "MIT",
