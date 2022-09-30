@@ -27,10 +27,12 @@ export class State extends BaseState {
     i_count_2: i16
     i_count_3: i32
     i_count_4: i64
-    table_nested_1: Array<u64>
-    table_nested_2: Array<Array<u64>>
-    table_nested_3: Array<Array<Array<u64>>>
-    table_nested_4: Array<Array<Array<Array<u64>>>>
-    table_nested_5: Array<Array<Array<Array<string>>>>
-    players_nested_1: Map<string, boolean>
+    array_nested_1: Array<u64>
+    array_nested_2: Array<Array<u64>>
+    array_nested_3: Array<Array<Array<u64>>>
+    array_nested_4: Array<Array<Array<Array<u64>>>>
+    array_nested_5: Array<Array<Array<Array<string>>>>
+    maps_nested_1: Map<string, boolean>
+    maps_nested_2: Map<string, Map<string, boolean>>
+    maps_nested_3: Map<string, Map<string, Map<string, boolean>>>
 }
