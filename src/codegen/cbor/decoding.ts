@@ -43,7 +43,7 @@ export function decodeTypes(
         const aux = searchResult[0].toString()
         const elementType = aux.substring(1, aux.length - 1)
 
-        let accessor = getAccessor(parentName, parentType, rootIndex || fieldName, false)
+        let accessor = getAccessor(parentName, parentType, rootIndex || fieldName, isFieldReference)
         result.push(`let ${fieldName}_raw = (${accessor} as Arr).valueOf()`)
         result.push(`let ${fieldName} = new Array<${elementType}>()`)
 
@@ -58,27 +58,27 @@ export function decodeTypes(
     }
 
     if (fieldType.startsWith('Map')) {
-        let [keyType, valueType] = fieldType.split('<')[1].split('>')[0].split(',')
-        keyType = keyType.trim()
-        valueType = valueType.trim()
+        const searchResult = new RegExp(/<.*>/).exec(fieldType)
+        if (!searchResult) throw new Error(`type ${fieldType} is not well formatted to be a map`)
 
-        let accessor = getAccessor(parentName, parentType, rootIndex || fieldName, false)
+        const typeFound = searchResult[0].toString()
+        const [keyTypeRaw, ...valueTypeRest] = typeFound.substring(1, typeFound.length - 1).split(',')
+        const keyType = keyTypeRaw.trim()
+        const valueType = valueTypeRest.join(',').trim()
+
+        let accessor = getAccessor(parentName, parentType, rootIndex || fieldName, isFieldReference)
         result.push(`let ${fieldName}_raw = (${accessor} as Obj).valueOf()`)
         result.push(`let ${fieldName}_keys =  ${fieldName}_raw.keys()`)
         result.push(`let ${fieldName} = new Map<${keyType}, ${valueType}>()`)
 
         let newIndex = getNewIndexLetter(result)
         result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldName}_keys.length; ${newIndex}++){`)
-        result.push(`let key = ${fieldName}_keys.at(${newIndex})`)
-        result.push(`let parsed_key = ${castType('string', keyType, 'key')}`)
+        result.push(`let key_${newIndex} = ${fieldName}_keys.at(${newIndex})`)
+        result.push(`let parsed_key_${newIndex} = ${castType('string', keyType, `key_${newIndex}`)}`)
 
-        let [tmp] = translateBasicTypes(`${fieldName}_raw`, 'map', 'key', valueType, true)
-        if (tmp == '') {
-            let accessor = getAccessor(`${fieldName}_raw`, 'map', 'key', true)
-            tmp = `${valueType}.parse(${accessor})`
-        }
+        decodeTypes(result, 'map', `${fieldName}_raw`, `${fieldName}_raw_${newIndex}`, valueType, `parsed_key_${newIndex}`, true)
 
-        result.push(`${fieldName}.set(parsed_key, ${tmp})`)
+        result.push(`${fieldName}.set(parsed_key_${newIndex}, ${fieldName}_raw_${newIndex})`)
         result.push(`}`)
         return
     }

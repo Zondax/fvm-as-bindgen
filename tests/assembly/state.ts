@@ -8,16 +8,6 @@ import { BaseState } from '@zondax/fvm-as-sdk/assembly/utils/state'
 
 // @ts-ignore
 export class State extends BaseState {
-    /*
-  Define your fields to save here
-
-  Some examples:
-
-  message: string;
-  count: u64;
-  array: Array<u64>;
-  map: Map<string, u64>;
-  */
     message: string
     u_count_1: u8
     u_count_2: u16
@@ -27,10 +17,16 @@ export class State extends BaseState {
     i_count_2: i16
     i_count_3: i32
     i_count_4: i64
-    table_nested_1: Array<u64>
-    table_nested_2: Array<Array<u64>>
-    table_nested_3: Array<Array<Array<u64>>>
-    table_nested_4: Array<Array<Array<Array<u64>>>>
-    table_nested_5: Array<Array<Array<Array<string>>>>
-    players_nested_1: Map<string, boolean>
+    array_nested_1: Array<u64>
+    array_nested_2: Array<Array<u64>>
+    array_nested_3: Array<Array<Array<u64>>>
+    array_nested_4: Array<Array<Array<Array<u64>>>>
+    array_nested_5: Array<Array<Array<Array<string>>>>
+    maps_nested_1: Map<string, boolean>
+    maps_nested_2: Map<string, Map<string, boolean>>
+    maps_nested_3: Map<string, Map<string, Map<string, boolean>>>
+    array_maps_nested_1: Array<Map<string, boolean>>
+    array_maps_nested_2: Array<Array<Map<string, boolean>>>
+    maps_array_nested_1: Map<string, Array<u64>>
+    maps_array_nested_2: Map<string, Map<string, Array<u64>>>
 }

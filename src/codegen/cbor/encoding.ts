@@ -99,7 +99,8 @@ export function encodeField(result: string[], type: string, fieldName: string, p
                 if (!searchResult) throw new Error(`type ${type} is not well formatted to be a map`)
 
                 const parentType = searchResult[0].toString()
-                const [keyType, valueType] = parentType.substring(1, parentType.length - 1).split(',', 2)
+                const [keyType, ...valueTypeRest] = parentType.substring(1, parentType.length - 1).split(',')
+                const valueType = valueTypeRest.join(',')
 
                 let newIndex = getNewIndexLetter(result)
                 result.push(`let keys_${newIndex} = ${fieldAccessor}${index}.keys()`)
@@ -108,7 +109,7 @@ export function encodeField(result: string[], type: string, fieldName: string, p
 
                 result.push(`for(let ${newIndex} = 0; ${newIndex} < keys_${newIndex}.length; ${newIndex}++){`)
                 result.push(`encoder.addKey(keys_${newIndex}[${newIndex}].toString())`)
-                encodeField(result, valueType.trim(), fieldName, parentName, 'map', `keys_${newIndex}[${newIndex}]`)
+                encodeField(result, valueType.trim(), `${fieldName}.get(keys_${newIndex}[${newIndex}])`, parentName, '', '')
                 result.push(`}`)
                 return
             }
